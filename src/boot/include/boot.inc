@@ -1,8 +1,14 @@
 ; ---------------- Configurations -----------------
 
 ; --------------- loader and kernel ---------------
-LOADER_BASE_ADDR 	equ 0x900 
-LOADER_START_SECTOR equ 0x2
+LOADER_BASE_ADDR 		equ 0x900 
+LOADER_START_SECTOR 	equ 0x2
+
+KERNEL_BIN_BASE_ADDR 	equ 0x80000
+KERNEL_IMAGE_BASE_ADDR  equ 0x1500
+KERNEL_START_SECTOR 	equ 0x8
+
+PAGE_DIR_TABLE_POS 		equ 0x100000
 
 ; -------------- descriptor properties ------------
 DESC_G_4K			equ 100000000000000000000000b	; 段界限 4K 粒度
@@ -37,11 +43,17 @@ DESC_DATA_HIGH4 	equ (0x00 << 24) + DESC_G_4K + DESC_D_32 + DESC_L + DESC_AVL + 
 DESC_VIDEO_HIGH4 	equ (0x00 << 24) + DESC_G_4K + DESC_D_32 + DESC_L + DESC_AVL + DESC_LIMIT_VIDEO2 + DESC_P + DESC_DPL_0 + DESC_S_DATA + DESC_TYPE_DATA + 0x0b
 
 ; ------------- selector properties --------------
-RPL0 	equ 00b
-RPL1 	equ 01b
-RPL2 	equ 10b
-RPL3 	equ 11b
-TI_GDT  equ 000b
-TI_LDT  equ 100b 
+RPL0 		equ 00b
+RPL1 		equ 01b
+RPL2 		equ 10b
+RPL3 		equ 11b
+TI_GDT  	equ 000b
+TI_LDT  	equ 100b 
 
-
+ 
+; ------------ page table properties --------------
+PG_P  		equ 1b
+PG_RW_R		equ 00b 
+PG_RW_W		equ 10b 
+PG_US_S		equ 000b 
+PG_US_U		equ 100b 

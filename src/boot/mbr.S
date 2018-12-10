@@ -119,6 +119,7 @@ SECTION MBR vstart=0x7c00       ; start position
                 add  bx,  2
                 loop .reading
                 ret            
+; ----------------------- rd_disk_m_16 -------------------------
 
 
     times 510-($-$$) db 0

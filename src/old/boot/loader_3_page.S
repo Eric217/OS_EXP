@@ -171,18 +171,9 @@ p_mode_start:
 	mov ds, ax
 	mov es, ax
 	mov ss, ax
-
 	mov esp,LOADER_STACK_TOP
-
 	mov ax, SELECTOR_VIDEO
 	mov gs, ax
-
-; -------------- 加载kernel	-------------     rd_disk_m_32 参数：
-	mov eax  KERNEL_START_SECTOR 			; kernel 所在扇区 
-	mov ebx  KERNEL_BIN_BASE_ADDR	 		; kernel 读到哪
-	mov ecx, 200 							; 读多少扇区
-
-	call rd_disk_m_32
 
 	call setup_page
 
@@ -213,143 +204,11 @@ p_mode_start:
 	; 在开启分页后,用gdt新的地址重新加载
 	lgdt [gdt_ptr]             ; 重新加载
 
-	jmp SELECTOR_CODE:enter_kernel	  		; 强制刷新流水线,更新gdt（不写也可以）
+	mov byte [gs:160], 'V'     ;视频段段基址已经被更新,用字符v表示virtual addr
 
-	enter_kernel:
-		call kernel_init
-		mov esp, 0xc009f000
-			; 每个 pcb 都是自然页，也就是要求 4KB 对齐，我们选择：
-			; 接近最大可用地址 0x9fbff，并以 4KB对齐，所以 0x9f000 最合适 
-	jmp KERNEL_ENTRY_POINT
- 
-
-; ---------- 解析 elf 格式的 kernel.bin (我们只需要程序中的段，拷贝到编译的地址) ---------
-	kernel_init:
-;---------------------------------------------------------
-		; 把一会用到的reg清零
-		xor eax, eax
-		xor ebx, ebx		; ebx记录程序头表地址
-		xor ecx, ecx		; cx 记录程序头表中的program header数量
-		xor edx, edx		; dx 记录program header尺寸,即e_phentsize
-
-		mov dx, [KERNEL_BIN_BASE_ADDR + 42] ; 偏移文件42字节处：e_phentsize, program header size
-		mov ebx,[KERNEL_BIN_BASE_ADDR + 28]	; 28字节处：e_phoff, program header table在文件中的偏移量
-											; 即第一个PH在文件中的偏移量 其实该值就是固定0x34
-		add ebx, KERNEL_BIN_BASE_ADDR		; 得到 PHT_ADDR
-		mov cx, [KERNEL_BIN_BASE_ADDR + 44] ; 44字节处：e_phnum, number of program headers
-		
-		.each_segment:
-	   		cmp byte [ebx + 0], PT_NULL		; p_type等于 PT_NULL则此 program header未使用
-	   	je .PTNULL
-
-	   		; 为函数memcpy压入参数，从右到左。原型类似于 memcpy(dst,src,size)
-	    	push dword [ebx + 16]   	 	; PH偏移16字节是 p_filesz，压入第三个参数:size
-	    	mov  eax,  [ebx + 4]			; PH偏移 4字节是 p_offset
-	   		add  eax,  KERNEL_BIN_BASE_ADDR ; 加上kernel.bin被加载到的物理地址，为该段的物理地址
-	   		push eax				  		; 压入memcpy的第二个参数: src
-	   		push dword [ebx + 8]			; PH偏移 8字节是 p_vaddr，为第一个参数:dst,目的地址
-	    	
-	    	call mem_cpy 	 				; 调用mem_cpy完成段复制
-	    	add  esp, 12				    ; 便捷弹栈
-	    	; 继续复制下一个段
-		.PTNULL:
-	   		add ebx, edx                    ; edx为 e_phentsize，在此让ebx指向下一个program header 
-	   	loop .each_segment
-	   	ret
+	jmp $
 
 
-;---------------- mem_cpy ------------------
-; 逐字节拷贝
-								; 栈中三个参数 (dst, src, size)
-	mem_cpy:	
-;---------------------------------------------------------
-	   	cld
-	    push ebp 	   		    ; 备份
-	    mov  ebp,  esp
-	    push ecx		   		; rep指令用到ecx，先备份
-	    mov  edi, [ebp +  8]	; dst
-	    mov  esi, [ebp + 12]	; src
-	    mov  ecx, [ebp + 16]	; size
-	    rep  movsb   			; 逐字节拷贝，
-	   
-	    pop ecx				 	; 恢复
-	    pop ebp
-	    ret
-
- 
-;---------------- rd_disk_m_32 ---------------
-; 读扇区到内存
-								; eax    sector start (LBA)
-                                ; ebx    将数据写入的内存地址   
-                                ; ecx    sector count
-    rd_disk_m_32:
-;---------------------------------------------
-                                 
-        ; back up
-        mov esi, eax        
-        mov di,  cx         
-
-        ; sector count
-        mov dx, 0x1f2   ; i/o port
-        mov al, cl      ; c-low
-        out dx, al 
-        mov eax,esi    ; recover        
-
-        ; write LBA 
-        ; 7~0 -> 0x1f3, LBA-low
-        mov dx, 0x1f3
-        out dx, al
-        
-        ; 15~8 -> 0x1f4, LBA-mid
-        mov cl, 8
-        shr eax,cl     ; eax = extension + AH + AL
-        mov dx, 0x1f4
-        out dx, al      ; 右移八位输出 mid
-        
-        ; 23~16 -> 0x1f5, LBA-high
-        shr eax,cl
-        mov dx, 0x1f5
-        out dx, al
-        
-        ; 27~24 & MOD & DEV -> 0x1f6, device reg 
-        shr eax,cl
-        and al, 0x0f    ; DEV = 1, al and 0001 0000
-        or  al, 0xe0    ; MOD = 1, position 5 & 7 fixed 1, al or 1110 0000
-                        ; 能凑出来就行
-        mov dx, 0x1f6
-        out dx, al
-
-         
-        ; command read 0x20 -> 0x1f7
-        mov dx, 0x1f7
-        mov al, 0x20
-        out dx, al
-        ; disk working...
-        
-        .not_ready:
-            nop             ; 空操作，增加延迟，减少打扰硬盘
-            in  al, dx      ; 0x1f7 now read as status
-            and al, 0x88    ; 取出第4、7 位，4 = ready, 7 = busy
-            cmp al, 0x08    ; 不改变al，al-0x08 结果输出到ZF CF PF
-                            ; 若为0 则有 ?001 0000 = ready
-        jnz .not_ready      ; ZF 非0，即BUSY 时，跳转 .not_ready 
-            
-            ; ready
-            ; 读一次2 字节，一个扇区512 字节，需要读di 个扇区：
-            mov ax, di
-            mov dx, 256     ; 共需要读 di*512/2 = di*256 次
-            mul dx          ; 这里 51200<65536，因此只需要ax
-            mov cx, ax      ; cx=ax 为loop 次数
-        
-            mov dx, 0x1f0
-        .reading:	 		; 读100KB，但bx 16位最大64KB，需要用ebx 
-            in   ax,   dx
-            mov [ebx], ax 	
-            add  ebx,   2
-        loop .reading
-        ret         
-
- 
 ;------------- 创建内核的 页目录表、页表 ---------------
 setup_page:
 ;--------------------------------------------------
