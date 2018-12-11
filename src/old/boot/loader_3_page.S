@@ -143,6 +143,14 @@ loader_start:
    		mov eax, cr0
    		or 	eax, 0x00000001
    		mov cr0, eax
+
+   		mov byte [gs:160], 'P'
+   		mov byte [gs:162], '_'
+   		mov byte [gs:164], 'M'
+   		mov byte [gs:166], 'O'
+   		mov byte [gs:168], 'D'
+   		mov byte [gs:170], 'E'
+
    		; ----- 至此已进入保护模式！----- 以上16位指令，下面这句也是
 
    		jmp dword SELECTOR_CODE:p_mode_start	

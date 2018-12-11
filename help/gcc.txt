@@ -1,3 +1,11 @@
+nasm compliler:
+    nasm -I include/ -o ../mbr.bin mbr.S 
+
+    dd if=mbr.bin of=../c.img bs=512 count=1 conv=notrunc
+
+    bochs -f bochsrc
+
+ 
 gcc compliler:
     默认对源文件 预处理、编译以及链接, 最后生成可执行文件, 默认为a.out
 

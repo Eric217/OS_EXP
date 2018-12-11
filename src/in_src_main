@@ -1,3 +1,0 @@
-#! /bin/bash
-
-gcc-elf -c -o main.o kernel/main.c && ld-elf main.o -Ttext 0xc0001500 -e main -o kernel.bin && dd if=kernel.bin of=../run/c.img bs=512 count=200 seek=8 conv=notrunc
