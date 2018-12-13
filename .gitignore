@@ -1,7 +1,5 @@
-**/.DS_Store
+.DS_Store
 log.txt
 *.img
-*.img.lock
-*.bin
-*.o
-*.out
+*.img.lock 
+/build
