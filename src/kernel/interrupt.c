@@ -4,12 +4,17 @@
 #include "io.h"
 #include "print.h"
 
-#define PIC_M_CTRL 0x20           // 这里用的可编程中断控制器是8259A,主片的控制端口是0x20
-#define PIC_M_DATA 0x21           // 主片的数据端口是0x21
-#define PIC_S_CTRL 0xa0           // 从片的控制端口是0xa0
-#define PIC_S_DATA 0xa1           // 从片的数据端口是0xa1
+#define PIC_M_CTRL 0x20         // 这里用的可编程中断控制器是8259A,主片的控制端口是0x20
+#define PIC_M_DATA 0x21         // 主片的数据端口是0x21
+#define PIC_S_CTRL 0xa0         // 从片的控制端口是0xa0
+#define PIC_S_DATA 0xa1         // 从片的数据端口是0xa1
 
-#define IDT_DESC_CNT 0x21        // 目前总共支持的中断数 33个
+#define IDT_DESC_CNT 0x21       // 目前总共支持的中断数 33个
+
+#define EFLAGS_IF 0x00000200    // eflags寄存器中的if位为1的16进制表示
+// 寄存器约束g 约束 EFLAG_VAR 可以放在内存或寄存器中，pushfl 把 eflags 压栈，
+// popl 将其弹出到与 EFLAG_VAR 关联的约束中，C变量 EFLAG_VAR 得到 eflags 值。
+#define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl; popl %0" : "=g" (EFLAG_VAR))
 
 /* 中断门描述符 结构体 */
 struct gate_desc {
@@ -86,7 +91,7 @@ static void pic_init(void) {
     outb (PIC_S_DATA, 0x02);    // ICW3: 设置从片连接到主片的IR2引脚
     outb (PIC_S_DATA, 0x01);    // ICW4: 8086模式, 正常EOI（手动结束）
     
-    put_str("   pic_init done\n");
+    put_str("   pic_init done!\n");
 
     /* 打开主片上IR0,也就是目前只接受时钟产生的中断 */
     outb (PIC_M_DATA, 0xfe);    // 对应位写1屏蔽中断
@@ -108,12 +113,52 @@ static void idt_desc_init(void) {
     for (i = 0; i < IDT_DESC_CNT; i++) {
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
     }
-    put_str("   idt_desc_init done\n");
+    put_str("   idt_desc_init done!\n");
 }
+
+
+/* 开中断并返回开中断前的状态*/
+enum intr_status intr_enable() {
+   enum intr_status old_status;
+   if (INTR_ON == intr_get_status()) {
+      old_status = INTR_ON;
+      return old_status;
+   } else {
+      old_status = INTR_OFF;
+      asm volatile("sti");   // 开中断,sti指令将IF位置1
+      return old_status;
+   }
+}
+
+/* 关中断,并且返回关中断前的状态 */
+enum intr_status intr_disable() {     
+   enum intr_status old_status;
+   if (INTR_ON == intr_get_status()) {
+      old_status = INTR_ON;
+      asm volatile("cli" : : : "memory"); // 关中断,cli指令将IF位置0
+      return old_status;
+   } else {
+      old_status = INTR_OFF;
+      return old_status;
+   }
+}
+
+/* 将中断状态设置为status，返回旧status */
+enum intr_status intr_set_status(enum intr_status status) {
+   return status & INTR_ON ? intr_enable() : intr_disable();
+}
+
+/* 获取当前中断状态 */
+enum intr_status intr_get_status() {
+   uint32_t eflags = 0; 
+   GET_EFLAGS(eflags);
+   return (EFLAGS_IF & eflags) ? INTR_ON : INTR_OFF; // 取 IF 位
+}
+ 
 
 /*完成有关中断的所有初始化工作*/
 void idt_init() {
-    put_str("idt_init start\n");
+    put_str("idt_init start...\n");
     idt_desc_init();       // 初始化中断描述符表
     exception_init();     // 异常名初始化并注册通常的中断处理函数
     pic_init();           // 初始化8259A
@@ -121,6 +166,6 @@ void idt_init() {
     /* 加载idt: limit or int-pointer-shl-16 -> uint64, lidt ptr-of-48-bit */
     uint64_t idt_operand = ((sizeof(idt) - 1) | ((uint64_t)(uint32_t)idt << 16));
     asm volatile("lidt %0" : : "m" (idt_operand));
-    put_str("idt_init done\n");
+    put_str("idt_init done!\n");
 }
 

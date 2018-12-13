@@ -1,4 +1,4 @@
 #! /bin/bash
-cd $OS_RUN && \
+cd ${HOME}/opt/bochs/my/run && \
 bochs -f bochsrc
 

@@ -228,7 +228,7 @@ p_mode_start:
 		mov esp, 0xc009f000
 			; 每个 pcb 都是自然页，也就是要求 4KB 对齐，我们选择：
 			; 接近最大可用地址 0x9fbff，并以 4KB对齐，所以 0x9f000 最合适 
-	jmp KERNEL_ENTRY_POINT
+	jmp KERNEL_ENTRY_POINT  	; 实际上 e_entry 可以在下面解析出来，这里直接写死了
  
 
 ; ---------- 解析 elf 格式的 kernel.bin (我们只需要程序中的段，拷贝到编译的地址) ---------
@@ -243,7 +243,7 @@ p_mode_start:
 		mov dx, [KERNEL_BIN_BASE_ADDR + 42] ; 偏移文件42字节处：e_phentsize, program header size
 		mov ebx,[KERNEL_BIN_BASE_ADDR + 28]	; 28字节处：e_phoff, program header table在文件中的偏移量
 											; 即第一个PH在文件中的偏移量 其实该值就是固定0x34
-		add ebx, KERNEL_BIN_BASE_ADDR		; 得到 PHT_ADDR
+		add ebx, KERNEL_BIN_BASE_ADDR		; 得到 PHT_ADDR ！！！
 		mov cx, [KERNEL_BIN_BASE_ADDR + 44] ; 44字节处：e_phnum, number of program headers
 		
 		.each_segment:
@@ -252,11 +252,14 @@ p_mode_start:
 
 	   		; 为函数memcpy压入参数，从右到左。原型类似于 memcpy(dst,src,size)
 	    	push dword [ebx + 16]   	 	; PH偏移16字节是 p_filesz，压入第三个参数:size
-	    	mov  eax,  [ebx + 4]			; PH偏移 4字节是 p_offset
-	   		add  eax,  KERNEL_BIN_BASE_ADDR ; 加上kernel.bin被加载到的物理地址，为该段的物理地址
+	    	mov  eax,  [ebx + 4]			; PH偏移 4字节是 本段在文件内的 offset，p_offset
+	   		add  eax,  KERNEL_BIN_BASE_ADDR ; 加上kernel.bin被加载到的物理地址，为本段的物理地址
 	   		push eax				  		; 压入memcpy的第二个参数: src
 	   		push dword [ebx + 8]			; PH偏移 8字节是 p_vaddr，为第一个参数:dst,目的地址
-	    	
+	    									; 编译后，段大小0x505，main符号在段的0x500处,
+	    									; 为了凑出来 -Ttext 的 0xc0001500，即 e_entry, main,
+	    									; 该段可以 p_offset=0 且位于 p_vaddr=0xc0001000  
+
 	    	call mem_cpy 	 				; 调用mem_cpy完成段复制
 	    	add  esp, 12				    ; 便捷弹栈
 	    	; 继续复制下一个段
