@@ -31,14 +31,14 @@ SECTION MBR vstart=0x7c00       ; start position
     int 0x10        ; screen clear.	
 
     ; go over note 3.3.2
-    mov byte [gs:0], 'M'
-    mov byte [gs:1], 0xA4
+    ; mov byte [gs:0], 'M'
+    ; mov byte [gs:1], 0xA4
 
-    mov byte [gs:2], 'B'
-    mov byte [gs:3], 0xA4
+    ; mov byte [gs:2], 'B'
+    ; mov byte [gs:3], 0xA4
     
-    mov byte [gs:4], 'R'
-    mov byte [gs:5], 0xA4
+    ; mov byte [gs:4], 'R'
+    ; mov byte [gs:5], 0xA4
 
     ; args:    
     mov eax, LOADER_START_SECTOR    ; 2

@@ -144,12 +144,12 @@ loader_start:
    		or 	eax, 0x00000001
    		mov cr0, eax
 
-   		mov byte [gs:160], 'P'
-   		mov byte [gs:162], '_'
-   		mov byte [gs:164], 'M'
-   		mov byte [gs:166], 'O'
-   		mov byte [gs:168], 'D'
-   		mov byte [gs:170], 'E'
+   		; mov byte [gs:160], 'P'
+   		; mov byte [gs:162], '_'
+   		; mov byte [gs:164], 'M'
+   		; mov byte [gs:166], 'O'
+   		; mov byte [gs:168], 'D'
+   		; mov byte [gs:170], 'E'
 
    		; ----- 至此已进入保护模式！----- 以上16位指令，下面这句也是
 
@@ -184,6 +184,8 @@ p_mode_start:
 
 	mov ax, SELECTOR_VIDEO
 	mov gs, ax
+
+	call reset_cursor
 
 ; -------------- 加载kernel	-------------     rd_disk_m_32 参数：
 	mov eax, KERNEL_START_SECTOR 			; kernel 所在扇区 
@@ -287,7 +289,28 @@ p_mode_start:
 	    pop ebp
 	    ret
 
- 
+ 	reset_cursor:
+ 		push edx 
+ 		mov  ebx, 0
+
+ 		; 高8位 
+		mov dx, 0x03d4			; 索引寄存器
+		mov al, 0x0e			; 用于提供光标位置的高8位
+		out dx, al
+		mov dx, 0x03d5			; 通过读写数据端口 0x3d5 设置光标位置 
+		mov al, bh
+		out dx, al
+
+		; 低8位 
+		mov dx, 0x03d4
+		mov al, 0x0f
+		out dx, al
+		mov dx, 0x03d5 
+		mov al, bl
+		out dx, al 
+		pop edx 
+		ret 
+
 ;---------------- rd_disk_m_32 ---------------
 ; 读扇区到内存
 								; eax    sector start (LBA)

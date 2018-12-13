@@ -2,7 +2,7 @@
 #include "global.h"
 #include "debug.h"
 
-/* 将dst_起始的size个字节置为value */
+/** 将dst_起始的size个Byte置为value,value0-127下有效 */
 void memset(void* dst_, uint8_t value, uint32_t size) {
    ASSERT(dst_ != NULL);
    uint8_t* dst = (uint8_t*)dst_;
@@ -37,7 +37,7 @@ int memcmp(const void* a_, const void* b_, uint32_t size) {
 /* 将字符串从src_复制到dst_ */
 char* strcpy(char* dst_, const char* src_) {
    ASSERT(dst_ != NULL && src_ != NULL);
-   char* r = dst_;		       // 用来返回目的字符串起始地址
+   char* r = dst_;		      // 返回起始地址
    while((*dst_++ = *src_++));
    return r;
 }
@@ -56,9 +56,7 @@ int8_t strcmp (const char* a, const char* b) {
    while (*a != 0 && *a == *b) {
       a++;
       b++;
-   }
-/* 如果*a小于*b就返回-1,否则就属于*a大于等于*b的情况。在后面的布尔表达式"*a > *b"中,
- * 若*a大于*b,表达式就等于1,否则就表达式不成立,也就是布尔值为0,恰恰表示*a等于*b */
+   } 
    return *a < *b ? -1 : *a > *b;
 }
 
