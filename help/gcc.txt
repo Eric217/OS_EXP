@@ -1,6 +1,7 @@
 nasm compliler:
     nasm -I include/ -o ../mbr.bin mbr.S 
-
+    -f elf
+    -E 预处理
     dd if=mbr.bin of=../c.img bs=512 count=1 conv=notrunc
 
     bochs -f bochsrc
