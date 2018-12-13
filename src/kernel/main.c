@@ -9,7 +9,7 @@ void main(void) {
    // 测试 print
 
    init_all();
-   asm volatile("sti");	     // 为演示中断处理, 在此临时开中断
- 
+   asm volatile("sti"); 	// 演示中断
+    
    while(1);
 } 
