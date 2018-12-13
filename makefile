@@ -19,7 +19,7 @@ CFLAGS = -Wall $(LIB) -c -fno-builtin -W -Wstrict-prototypes -Wmissing-prototype
 LDFLAGS = -Ttext $(ENTRY_POINT) -e main -Map $(OBJ_DIR)/kernel.map
 OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/init.o $(OBJ_DIR)/interrupt.o \
       $(OBJ_DIR)/timer.o $(OBJ_DIR)/kernel.o $(OBJ_DIR)/print.o \
-      $(OBJ_DIR)/debug.o
+      $(OBJ_DIR)/debug.o $(OBJ_DIR)/memory.o $(OBJ_DIR)/bitmap.o $(OBJ_DIR)/string.o
 
 ##############     c代码编译     ###############
 $(OBJ_DIR)/main.o: $(SRC_DIR)/kernel/main.c $(SRC_DIR)/lib/kernel/print.h \
@@ -40,6 +40,20 @@ $(OBJ_DIR)/timer.o: $(SRC_DIR)/device/timer.c $(SRC_DIR)/device/timer.h $(SRC_DI
 
 $(OBJ_DIR)/debug.o: $(SRC_DIR)/kernel/debug.c $(SRC_DIR)/kernel/debug.h \
         $(SRC_DIR)/lib/kernel/print.h $(SRC_DIR)/lib/stdint.h $(SRC_DIR)/kernel/interrupt.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/string.o: $(SRC_DIR)/lib/string.c $(SRC_DIR)/lib/string.h $(SRC_DIR)/kernel/debug.h \
+        $(SRC_DIR)/kernel/global.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/bitmap.o: $(SRC_DIR)/lib/kernel/bitmap.c $(SRC_DIR)/lib/kernel/bitmap.h \
+    	$(SRC_DIR)/kernel/global.h $(SRC_DIR)/lib/stdint.h $(SRC_DIR)/lib/string.h \
+     	$(SRC_DIR)/lib/kernel/print.h $(SRC_DIR)/kernel/interrupt.h $(SRC_DIR)/kernel/debug.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/memory.o: $(SRC_DIR)/kernel/memory.c $(SRC_DIR)/kernel/memory.h $(SRC_DIR)/lib/stdint.h \
+		$(SRC_DIR)/lib/kernel/bitmap.h $(SRC_DIR)/kernel/global.h $(SRC_DIR)/kernel/debug.h \
+		$(SRC_DIR)/lib/kernel/print.h $(SRC_DIR)/lib/kernel/io.h $(SRC_DIR)/kernel/interrupt.h $(SRC_DIR)/lib/string.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ##############    汇编代码编译    ###############

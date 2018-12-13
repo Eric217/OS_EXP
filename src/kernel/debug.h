@@ -4,7 +4,7 @@ void panic_spin(char* filename, int line, const char* func, const char* conditio
 // # 将宏参数转化为字符串字面量
 // 可变参数宏，括号内参数用"..."表示，宏内用 __VA_ARGS__ 代表省略号对应的参数
 #define PANIC(...) panic_spin (__FILE__, __LINE__, __func__, __VA_ARGS__)
-#define println(str) if (str) put_str(str); put_char('\n');
+
 #ifdef NDEBUG
     #define ASSERT(CONDITION) ((void)0)
 #else
