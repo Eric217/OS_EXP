@@ -3,57 +3,59 @@
 # $<，依赖文件中的第1个文件 < 指向最左侧，第一个
 # $^，所有依赖文件的集合，自动去重。^很像从上往下罩的动作，集合
 # $?，所有比目标文件 mtime 新的依赖文件集合 
- 
-SRC_DIR = $(HOME)/opt/bochs/my/src
-OBJ_DIR = $(HOME)/opt/bochs/my/.build/object
-BIN_DIR = $(HOME)/opt/bochs/my/.build/binary
-DISK    = $(HOME)/opt/bochs/my/run/c.img
+PROJECT = $(HOME)/opt/bochs/my
+
+SRC_DIR = $(PROJECT)/src
+OBJ_DIR = $(PROJECT)/.build/object
+BIN_DIR = $(PROJECT)/.build/binary
+
+MAPFILE = $(PROJECT)/.build/kernel.map
+DISK    = $(PROJECT)/run/c.img
 
 ENTRY_POINT = 0xc0001500
+
 AS = @nasm
 CC = @gcc-elf
 LD = @ld-elf
-LIB = -I $(SRC_DIR)/lib/ -I $(SRC_DIR)/lib/kernel/ -I $(SRC_DIR)/lib/user/ -I $(SRC_DIR)/kernel/ -I $(SRC_DIR)/device/
+
+LIB = -I $(SRC_DIR)/lib/ -I $(SRC_DIR)/lib/kernel/ -I $(SRC_DIR)/lib/user/ \
+	  -I $(SRC_DIR)/kernel/ -I $(SRC_DIR)/device/ -I $(SRC_DIR)/thread/
+
 ASFLAGS = -f elf
 CFLAGS = -Wall $(LIB) -c -fno-builtin -W -Wstrict-prototypes -Wmissing-prototypes 
-LDFLAGS = -Ttext $(ENTRY_POINT) -e main -Map $(OBJ_DIR)/kernel.map
+LDFLAGS = -Ttext $(ENTRY_POINT) -e main -Map $(MAPFILE)
+
 OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/init.o $(OBJ_DIR)/interrupt.o \
       $(OBJ_DIR)/timer.o $(OBJ_DIR)/kernel.o $(OBJ_DIR)/print.o \
-      $(OBJ_DIR)/debug.o $(OBJ_DIR)/memory.o $(OBJ_DIR)/bitmap.o $(OBJ_DIR)/string.o
+      $(OBJ_DIR)/debug.o $(OBJ_DIR)/memory.o $(OBJ_DIR)/bitmap.o $(OBJ_DIR)/string.o \
+      $(OBJ_DIR)/thread.o 
 
 ##############     c代码编译     ###############
-$(OBJ_DIR)/main.o: $(SRC_DIR)/kernel/main.c $(SRC_DIR)/lib/kernel/print.h \
-        $(SRC_DIR)/lib/stdint.h $(SRC_DIR)/kernel/init.h
+$(OBJ_DIR)/main.o: $(SRC_DIR)/kernel/main.c 
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ_DIR)/init.o: $(SRC_DIR)/kernel/init.c $(SRC_DIR)/kernel/init.h $(SRC_DIR)/lib/kernel/print.h \
-        $(SRC_DIR)/lib/stdint.h $(SRC_DIR)/kernel/interrupt.h $(SRC_DIR)/device/timer.h
+$(OBJ_DIR)/init.o: $(SRC_DIR)/kernel/init.c 
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ_DIR)/interrupt.o: $(SRC_DIR)/kernel/interrupt.c $(SRC_DIR)/kernel/interrupt.h \
-        $(SRC_DIR)/lib/stdint.h $(SRC_DIR)/kernel/global.h $(SRC_DIR)/lib/kernel/io.h $(SRC_DIR)/lib/kernel/print.h
+$(OBJ_DIR)/interrupt.o: $(SRC_DIR)/kernel/interrupt.c 
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ_DIR)/timer.o: $(SRC_DIR)/device/timer.c $(SRC_DIR)/device/timer.h $(SRC_DIR)/lib/stdint.h \
-         $(SRC_DIR)/lib/kernel/io.h $(SRC_DIR)/lib/kernel/print.h
+$(OBJ_DIR)/timer.o: $(SRC_DIR)/device/timer.c 
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ_DIR)/debug.o: $(SRC_DIR)/kernel/debug.c $(SRC_DIR)/kernel/debug.h \
-        $(SRC_DIR)/lib/kernel/print.h $(SRC_DIR)/lib/stdint.h $(SRC_DIR)/kernel/interrupt.h
+$(OBJ_DIR)/debug.o: $(SRC_DIR)/kernel/debug.c 
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ_DIR)/string.o: $(SRC_DIR)/lib/string.c $(SRC_DIR)/lib/string.h $(SRC_DIR)/kernel/debug.h \
-        $(SRC_DIR)/kernel/global.h
+$(OBJ_DIR)/string.o: $(SRC_DIR)/lib/string.c 
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ_DIR)/bitmap.o: $(SRC_DIR)/lib/kernel/bitmap.c $(SRC_DIR)/lib/kernel/bitmap.h \
-    	$(SRC_DIR)/kernel/global.h $(SRC_DIR)/lib/stdint.h $(SRC_DIR)/lib/string.h \
-     	$(SRC_DIR)/lib/kernel/print.h $(SRC_DIR)/kernel/interrupt.h $(SRC_DIR)/kernel/debug.h
+$(OBJ_DIR)/bitmap.o: $(SRC_DIR)/lib/kernel/bitmap.c 
 	$(CC) $(CFLAGS) $< -o $@
 
-$(OBJ_DIR)/memory.o: $(SRC_DIR)/kernel/memory.c $(SRC_DIR)/kernel/memory.h $(SRC_DIR)/lib/stdint.h \
-		$(SRC_DIR)/lib/kernel/bitmap.h $(SRC_DIR)/kernel/global.h $(SRC_DIR)/kernel/debug.h \
-		$(SRC_DIR)/lib/kernel/print.h $(SRC_DIR)/lib/kernel/io.h $(SRC_DIR)/kernel/interrupt.h $(SRC_DIR)/lib/string.h
+$(OBJ_DIR)/memory.o: $(SRC_DIR)/kernel/memory.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/thread.o: $(SRC_DIR)/thread/thread.c 
 	$(CC) $(CFLAGS) $< -o $@
 
 ##############    汇编代码编译    ###############
@@ -73,7 +75,7 @@ $(BIN_DIR)/loader.bin: $(SRC_DIR)/boot/loader.S
 	$(AS) $< -I $(SRC_DIR)/boot/include/ -o $@
 
 
-.PHONY : mk_dir hd clean all
+.PHONY : mk_dir hd clean all all-r
 
 mk_dir:
 	@if [[ ! -d $(OBJ_DIR) ]];then mkdir $(OBJ_DIR);fi
@@ -86,7 +88,8 @@ hd:
 clean:
 	@cd $(OBJ_DIR) && rm -f ./*  
 	@cd $(BIN_DIR) && rm -f ./*
+	@rm -f $(MAPFILE)
 
 build: $(BIN_DIR)/kernel.bin $(BIN_DIR)/mbr.bin $(BIN_DIR)/loader.bin 
-
+all-r: mk_dir clean build hd
 all: mk_dir build hd
