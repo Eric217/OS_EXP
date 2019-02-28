@@ -28,7 +28,7 @@ LDFLAGS = -Ttext $(ENTRY_POINT) -e main -Map $(MAPFILE)
 OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/init.o $(OBJ_DIR)/interrupt.o \
       $(OBJ_DIR)/timer.o $(OBJ_DIR)/kernel.o $(OBJ_DIR)/print.o \
       $(OBJ_DIR)/debug.o $(OBJ_DIR)/memory.o $(OBJ_DIR)/bitmap.o $(OBJ_DIR)/string.o \
-      $(OBJ_DIR)/thread.o 
+      $(OBJ_DIR)/thread.o $(OBJ_DIR)/list.o $(OBJ_DIR)/switch.o 
 
 ##############     c代码编译     ###############
 $(OBJ_DIR)/main.o: $(SRC_DIR)/kernel/main.c 
@@ -58,10 +58,16 @@ $(OBJ_DIR)/memory.o: $(SRC_DIR)/kernel/memory.c
 $(OBJ_DIR)/thread.o: $(SRC_DIR)/thread/thread.c 
 	$(CC) $(CFLAGS) $< -o $@
 
+$(OBJ_DIR)/list.o: $(SRC_DIR)/lib/kernel/list.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+
 ##############    汇编代码编译    ###############
 $(OBJ_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.S
 	$(AS) $(ASFLAGS) $< -o $@
 $(OBJ_DIR)/print.o: $(SRC_DIR)/lib/kernel/print.S
+	$(AS) $(ASFLAGS) $< -o $@
+$(OBJ_DIR)/switch.o: $(SRC_DIR)/thread/switch.S
 	$(AS) $(ASFLAGS) $< -o $@
 
 ##############    链接所有目标文件    #############

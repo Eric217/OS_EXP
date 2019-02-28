@@ -64,7 +64,7 @@ SECTION MBR vstart=0x7c00       ; start position
         mov dx, 0x1f2   ; i/o port
         mov al, cl      ; c-low
         out dx, al 
-        mov eax,esi    ; recover        
+        mov eax,esi     ; recover        
 
         ; write LBA 
         ; 7~0 -> 0x1f3, LBA-low
@@ -73,7 +73,7 @@ SECTION MBR vstart=0x7c00       ; start position
         
         ; 15~8 -> 0x1f4, LBA-mid
         mov cl, 8
-        shr eax,cl     ; eax = extension + AH + AL
+        shr eax,cl      ; eax = extension + AH + AL
         mov dx, 0x1f4
         out dx, al      ; 右移八位输出 mid
         
@@ -85,7 +85,7 @@ SECTION MBR vstart=0x7c00       ; start position
         ; 27~24 & MOD & DEV -> 0x1f6, device reg 
         shr eax,cl
         and al, 0x0f    ; DEV = 1, al and 0001 0000
-        or  al, 0xe0     ; MOD = 1, position 5 & 7 fixed 1, al or 1110 0000
+        or  al, 0xe0    ; MOD = 1, position 5 & 7 fixed 1, al or 1110 0000
                         ; 能凑出来就行
         mov dx, 0x1f6
         out dx, al
@@ -103,7 +103,7 @@ SECTION MBR vstart=0x7c00       ; start position
             and al, 0x88    ; 取出第4、7 位，4 = ready, 7 = busy
             cmp al, 0x08    ; 不改变al，al-0x08 结果输出到ZF CF PF
                             ; 若为0 则有 ?001 0000 = ready
-            jnz .not_ready  ; ZF 非0，即BUSY 时，跳转 .not_ready 
+        jnz .not_ready  ; ZF 非0，即BUSY 时，跳转 .not_ready 
             
             ; ready
             ; 读一次2 字节，一个扇区512 字节，需要读di 个扇区：
@@ -113,12 +113,12 @@ SECTION MBR vstart=0x7c00       ; start position
             mov cx, ax      ; cx=ax 为loop 次数
         
             mov dx, 0x1f0
-            .reading:
-                in   ax,  dx
-                mov [bx], ax
-                add  bx,  2
-                loop .reading
-                ret            
+        .reading:
+            in   ax,  dx
+            mov [bx], ax
+            add  bx,  2
+        loop .reading
+        ret            
 ; ----------------------- rd_disk_m_16 -------------------------
 
 

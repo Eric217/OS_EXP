@@ -27,10 +27,23 @@ struct gate_desc {
 
 // 静态函数声明,全局数据结构
 static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function);
-static struct gate_desc idt[IDT_DESC_CNT];   // idt是中断描述符表,本质上就是个中断门描述符数组
+
+static struct gate_desc idt[IDT_DESC_CNT];   
+// idt是中断描述符表,本质上就是个中断门描述符数组
+// 注意区分 中断描述符数组，中断程序入口数组，中断处理程序数组
+// 一会要用 中段处理程序入口数组，来初始化（填充进）中断描述符中。入口程序里，会call 中断处理程序
+// 真正的中断处理程序，初始化时都是相同的处理方式：打印
+// 因为大部分中断是未处理的异常引起的，所以中断程序初始化就像是异常处理函数初始化，
+// 对于有意的中断，我们叫做 注册中断处理程序，即替代 处理程序数组里存的那个指针
+// lidt 之后，中断控制器收到中断，发给CPU，按约定的中断对应的下标查 idt，执行入口，执行中段程序，退出中断
+// 那么为什么要拐弯抹角中间插一个入口表呢，直接让 idt 存中断程序不行吗？我个人的理解，
+// 中断程序是C写的，编译后寄存器根本控制不住，必须在执行C前备份reg，执行完C再恢复，还有中断返回、控制器操作等等，
+// 尽管这些可以在C里内联写，但每个程序都要重复这段，因此单独一个 kernel.S 做一个入口表
 
 extern intr_handler intr_entry_table[IDT_DESC_CNT]; // 指向kernel.S中的中断处理函数数组
+
 intr_handler idt_table[IDT_DESC_CNT];               // 映射上面的数组
+
 char* intr_name[IDT_DESC_CNT];                      // 用于保存异常的名字，方便根据 vec_num DEBUG
 
 // 通用中断处理函数，用于异常出现时处理
@@ -40,9 +53,27 @@ static void general_intr_handler(uint8_t vec_num) {
         // 0x2f 是从片 8259A 上的最后一个 IRQ 引脚，保留项
         return;
     }
-    put_str("int vector: 0x");
-    put_int(vec_num);
-    put_char('\n');
+   /* 将光标置为0,从屏幕左上角清出一片打印异常信息的区域,方便阅读 */
+   set_cursor(0);
+   int cursor_pos = 0;
+   while(cursor_pos < 320) {
+      put_char(' ');
+      cursor_pos++;
+   }
+
+   set_cursor(0);  // 重置光标为屏幕左上角
+   put_str("!!!!!!!      excetion message begin  !!!!!!!!\n");
+   set_cursor(88);  // 从第2行第8个字符开始打印
+   put_str(intr_name[vec_num]);
+   if (vec_num == 14) {    // 若为Pagefault,将缺失的地址打印出来并悬停
+      int page_fault_vaddr = 0; 
+      asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));   // cr2是存放造成page_fault的地址
+      put_str("\npage fault addr is ");put_int(page_fault_vaddr); 
+   }
+   put_str("\n!!!!!!!      excetion message end    !!!!!!!!\n");
+  // 能进入中断处理程序就表示已经处在关中断情况下,
+  // 不会出现调度进程的情况。故下面的死循环不会再被中断。
+   while(1);
 }
 
 /* 完成一般中断处理函数注册及异常名称注册 */
@@ -155,6 +186,12 @@ enum intr_status intr_get_status() {
    return (EFLAGS_IF & eflags) ? INTR_ON : INTR_OFF; // 取 IF 位
 }
  
+/* 在中断处理程序数组第vector_no个元素中注册安装中断处理程序function */
+void register_handler(uint8_t vector_no, intr_handler function) {
+/* idt_table数组中的函数是在进入中断后根据中断向量号调用的,
+ * 见kernel/kernel.S的call [idt_table + %1*4] */
+   idt_table[vector_no] = function; 
+}
 
 /*完成有关中断的所有初始化工作*/
 void idt_init() {
