@@ -2,4 +2,4 @@
 log.txt
 *.img
 *.img.lock 
-/.build
+.build/

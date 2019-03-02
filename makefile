@@ -3,7 +3,7 @@
 # $<，依赖文件中的第1个文件 < 指向最左侧，第一个
 # $^，所有依赖文件的集合，自动去重。^很像从上往下罩的动作，集合
 # $?，所有比目标文件 mtime 新的依赖文件集合 
-PROJECT = $(HOME)/opt/bochs/my
+PROJECT = .
 
 SRC_DIR = $(PROJECT)/src
 OBJ_DIR = $(PROJECT)/.build/object
@@ -81,15 +81,15 @@ $(BIN_DIR)/loader.bin: $(SRC_DIR)/boot/loader.S
 	$(AS) $< -I $(SRC_DIR)/boot/include/ -o $@
 
 
-.PHONY : mk_dir hd clean all all-r
+.PHONY : mk_dir hd clean all all-r 
 
 mk_dir:
 	@if [[ ! -d $(OBJ_DIR) ]];then mkdir $(OBJ_DIR);fi
 	@if [[ ! -d $(BIN_DIR) ]];then mkdir $(BIN_DIR);fi
 hd:
-	@dd if=$(BIN_DIR)/mbr.bin  	of=$(DISK) bs=512 count=1 	 		conv=notrunc  
-	@dd if=$(BIN_DIR)/loader.bin of=$(DISK) bs=512 count=4 	seek=2 	conv=notrunc  
-	@dd if=$(BIN_DIR)/kernel.bin of=$(DISK) bs=512 count=200 seek=8  conv=notrunc
+	@dd if=$(BIN_DIR)/mbr.bin 		of=$(DISK) bs=512 count=1 	 		conv=notrunc  
+	@dd if=$(BIN_DIR)/loader.bin 	of=$(DISK) bs=512 count=4 	seek=2 	conv=notrunc  
+	@dd if=$(BIN_DIR)/kernel.bin 	of=$(DISK) bs=512 count=200 seek=8  conv=notrunc
 
 clean:
 	@cd $(OBJ_DIR) && rm -f ./*  

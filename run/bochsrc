@@ -7,7 +7,7 @@ vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
 log: log.txt
 
 mouse: enabled=0
-keyboard: keymap=$BXSHARE/keymaps/x11-pc-us.map
+keyboard: keymap=$BXKEYMAP
 
 # ata0 means Primary channel, ata0-master means master disk
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
