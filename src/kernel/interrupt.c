@@ -54,7 +54,7 @@ static void general_intr_handler(uint8_t vec_num) {
         return;
     }
    /* 将光标置为0,从屏幕左上角清出一片打印异常信息的区域,方便阅读 */
-   set_cursor(0);
+  u set_crsor(0);
    int cursor_pos = 0;
    while(cursor_pos < 320) {
       put_char(' ');
@@ -74,7 +74,7 @@ static void general_intr_handler(uint8_t vec_num) {
   // 能进入中断处理程序就表示已经处在关中断情况下,
   // 不会出现调度进程的情况。故下面的死循环不会再被中断。
    while(1);
-}
+}              
 
 /* 完成一般中断处理函数注册及异常名称注册 */
 static void exception_init(void) {  

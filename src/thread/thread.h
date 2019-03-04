@@ -15,45 +15,47 @@ enum task_status {
     TASK_HANGING,
     TASK_DIED
 };
-// 进程与线程的区别是 是否独自拥有地址空间，也就是是否拥有页表，
+
 /***********   中断栈intr_stack   ***********
- * 此结构用于中断发生时 保护 程序(线程或进程)的上下文环境:
- * 进程或线程被外部中断或软中断打断时,会按照此结构压入上下文 reg
- * intr_exit中的出栈操作是此结构的逆操作
- * 此栈在线程自己的 内核栈 中位置固定,页的最顶端
+ * 中断发生时，详见 kernel.S 为保护本程序(线程或进程)的上下文，
+ * 压入一系列 reg。按顺序，即为本结构。 
  ********************************************/
 struct intr_stack {
-    uint32_t vec_no;     // kernel.S 宏VECTOR中push %1 压入的中断号
+    uint32_t vec_no;    // push %1 压入的中断号
+
     uint32_t edi;
     uint32_t esi;
     uint32_t ebp;
-    uint32_t esp_dummy;     // 虽然pushad把esp也压入,但esp是不断变化的,所以会被popad忽略
+    uint32_t esp_dummy; // 虽然 esp 也压入，但esp是不断变化的 
     uint32_t ebx;
     uint32_t edx;
     uint32_t ecx;
     uint32_t eax;
+
     uint32_t gs;
     uint32_t fs;
     uint32_t es;
     uint32_t ds;
     
-    /* 以下由cpu从低特权级进入高特权级时压入 */
-    uint32_t err_code;         // err_code会被压入在eip之后
-    void (*eip) (void);
-    uint32_t cs;
+    uint32_t err_code;  // err_code 
+
+    void (*eip) (void); // old eip
+    uint32_t cs;        // old cs
+
     uint32_t eflags;
-    void* esp;
-    uint32_t ss;
+
+    void* esp;          // old esp, 特权级升高时才有
+    uint32_t ss;        // old ss,  特权级升高时才有
 };
 
 /***********  线程栈thread_stack  ***********
  * 线程自己的栈,用于存储线程中待执行的函数
  * 此结构在线程自己的内核栈中位置不固定,
- * 用在switch_to时保存线程环境。
+ * 仅用于 switch_to 时保存线程环境。
  * 实际位置取决于实际运行情况。
  ******************************************/
 struct thread_stack {
-    uint32_t ebp;
+    uint32_t ebp; // ABI
     uint32_t ebx;
     uint32_t edi;
     uint32_t esi;
@@ -63,33 +65,27 @@ struct thread_stack {
     void (*eip) (thread_func* func, void* func_arg);
     
     /*****   以下仅供第一次被调度上cpu时使用   ****/
-    
-    /* 参数unused_ret只为占位置充数为返回地址 */
-    void (*unused_retaddr);
-    thread_func* function;   // 由Kernel_thread所调用的函数名
-    void* func_arg;    // 由Kernel_thread所调用的函数所需的参数
+    void (*unused_retaddr); // 参数 unused_ret 为返回地址占位
+    thread_func* function;  // 由Kernel_thread所调用的函数名
+    void* func_arg;         // 由Kernel_thread所调用的函数所需的参数
 };
 
 /* 进程或线程的pcb,程序控制块 */
 struct task_struct {
-    uint32_t* self_kstack;     // 各内核线程都用自己的内核栈
-    enum task_status status;
-    uint8_t priority;         // 线程优先级
-    char name[16];
-    uint32_t stack_magic;     // 用这串数字做栈的边界标记,用于检测栈的溢出
+    uint32_t*           self_kstack;    // 各线程都有自己的内核栈
+    enum task_status    status;
+    uint8_t             priority;       // 线程优先级，目前表现为嘀嗒数
+    char                name[16];          
     
-    uint8_t ticks;
-    /* 此任务自上cpu运行后至今占用了多少cpu嘀嗒数,
-     * 也就是此任务执行了多久*/
-    uint32_t elapsed_ticks;
+    uint8_t             ticks;  
+    uint32_t            elapsed_ticks;  // 此任务自上cpu运行后至今占用了多少cpu嘀嗒数,
+     
+    struct list_elem    general_tag;    // 线程队列 thread_ready_list 中的结点
+     
+    struct list_elem    all_list_tag;   // 线程队列 thread_all_list 中的结点 
     
-    /* general_tag的作用是用于线程在一般的队列中的结点 */
-    struct list_elem general_tag;
-    
-    /* all_list_tag的作用是用于线程队列thread_all_list中的结点 */
-    struct list_elem all_list_tag;
-    
-    uint32_t* pgdir;              // 进程自己页表的虚拟地址
+    uint32_t*           pgdir;          // 进程自己页表的虚拟地址
+    uint32_t            stack_magic;    // 用这串数字做栈的边界标记,用于检测栈的溢出
 };
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg);

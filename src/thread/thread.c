@@ -33,11 +33,9 @@ static void kernel_thread(thread_func* function, void* func_arg) {
 
 /* 初始化线程栈thread_stack,将待执行的函数和参数放到thread_stack中相应的位置 */
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg) {
-    /* 先预留中断使用栈的空间,可见thread.h中定义的结构 */
-    pthread->self_kstack -= sizeof(struct intr_stack);
+    pthread->self_kstack -= sizeof(struct intr_stack); // 预留中断栈空间
+    pthread->self_kstack -= sizeof(struct thread_stack); // 留出线程栈空间 
     
-    /* 再留出线程栈空间,可见thread.h中定义 */
-    pthread->self_kstack -= sizeof(struct thread_stack);
     struct thread_stack* kthread_stack = (struct thread_stack*)pthread->self_kstack;
     kthread_stack->eip = kernel_thread;
     kthread_stack->function = function;
@@ -49,21 +47,18 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
 void init_thread(struct task_struct* pthread, char* name, int prio) {
     memset(pthread, 0, sizeof(*pthread));
     strcpy(pthread->name, name);
-    
-    if (pthread == main_thread) {
-        /* 由于把main函数也封装成一个线程,并且它一直是运行的,故将其直接设为TASK_RUNNING */
-        pthread->status = TASK_RUNNING;
-    } else {
-        pthread->status = TASK_READY;
-    }
-    
-    /* self_kstack是线程自己在内核态下使用的栈顶地址 */
-    pthread->self_kstack = (uint32_t*)((uint32_t)pthread + PG_SIZE);
+      
+    pthread->self_kstack = (uint32_t*)((uint32_t)pthread + PG_SIZE); // 内核栈顶在页表顶部
     pthread->priority = prio;
     pthread->ticks = prio;
     pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;
-    pthread->stack_magic = 0x19870916;    // 自定义的魔数
+    pthread->stack_magic = 0x19870916;  // 自定义的魔数
+
+    pthread->status = TASK_READY;
+    if (pthread == main_thread) {
+        pthread->status = TASK_RUNNING; // main 线程一直是运行的
+    }
 }
 
 /* 创建一优先级为prio的线程,线程名为name,线程所执行的函数是function(func_arg) */

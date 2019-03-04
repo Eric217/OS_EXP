@@ -131,7 +131,7 @@ void* malloc_page(enum pool_flags pf, uint32_t pg_cnt) {
             uint32_t c = 0;
             uint32_t bit_idx_start = ((uint32_t)vaddr_start - kernel_vaddr.vaddr_start)/PG_SIZE;
             while(c < pg_cnt) 
-                bitmap_set(&kernel_vaddr.vaddr_bitmap, bit_idx_start + c++, 1);
+                bitmap_set(&kernel_vaddr.vaddr_bitmap, bit_idx_start + c++, 0);
             
             c = pg_cnt - cnt - 1; 
             for (c = pg_cnt - cnt - 1; c > 0; c--) {
