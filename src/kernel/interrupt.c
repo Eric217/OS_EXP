@@ -28,7 +28,7 @@ struct gate_desc {
 // 静态函数声明,全局数据结构
 static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function);
 
-static struct gate_desc idt[IDT_DESC_CNT];   
+static struct gate_desc idt[IDT_DESC_CNT];
 // idt是中断描述符表,本质上就是个中断门描述符数组
 // 注意区分 中断描述符数组，中断程序入口数组，中断处理程序数组
 // 一会要用 中段处理程序入口数组，来初始化（填充进）中断描述符中。入口程序里，会call 中断处理程序
@@ -53,37 +53,37 @@ static void general_intr_handler(uint8_t vec_num) {
         // 0x2f 是从片 8259A 上的最后一个 IRQ 引脚，保留项
         return;
     }
-   /* 将光标置为0,从屏幕左上角清出一片打印异常信息的区域,方便阅读 */
-  u set_crsor(0);
-   int cursor_pos = 0;
-   while(cursor_pos < 320) {
-      put_char(' ');
-      cursor_pos++;
-   }
-
-   set_cursor(0);  // 重置光标为屏幕左上角
-   put_str("!!!!!!!      excetion message begin  !!!!!!!!\n");
-   set_cursor(88);  // 从第2行第8个字符开始打印
-   put_str(intr_name[vec_num]);
-   if (vec_num == 14) {    // 若为Pagefault,将缺失的地址打印出来并悬停
-      int page_fault_vaddr = 0; 
-      asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));   // cr2是存放造成page_fault的地址
-      put_str("\npage fault addr is ");put_int(page_fault_vaddr); 
-   }
-   put_str("\n!!!!!!!      excetion message end    !!!!!!!!\n");
-  // 能进入中断处理程序就表示已经处在关中断情况下,
-  // 不会出现调度进程的情况。故下面的死循环不会再被中断。
-   while(1);
-}              
+    /* 将光标置为0,从屏幕左上角清出一片打印异常信息的区域,方便阅读 */
+    set_cursor(0);
+    int cursor_pos = 0;
+    while(cursor_pos < 320) {
+        put_char(' ');
+        cursor_pos++;
+    }
+    
+    set_cursor(0);  // 重置光标为屏幕左上角
+    put_str("!!!!!!!      excetion message begin  !!!!!!!!\n");
+    set_cursor(88);  // 从第2行第8个字符开始打印
+    put_str(intr_name[vec_num]);
+    if (vec_num == 14) {    // 若为Pagefault,将缺失的地址打印出来并悬停
+        int page_fault_vaddr = 0;
+        asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));   // cr2是存放造成page_fault的地址
+        put_str("\npage fault addr is ");put_int(page_fault_vaddr);
+    }
+    put_str("\n!!!!!!!      excetion message end    !!!!!!!!\n");
+    // 能进入中断处理程序就表示已经处在关中断情况下,
+    // 不会出现调度进程的情况。故下面的死循环不会再被中断。
+    while(1);
+}
 
 /* 完成一般中断处理函数注册及异常名称注册 */
-static void exception_init(void) {  
+static void exception_init(void) {
     int i;
-    for (i = 0; i < IDT_DESC_CNT; i++) {        
+    for (i = 0; i < IDT_DESC_CNT; i++) {
         // kernel.S call [idt_table + vec_num*4]
         // 先统一初始化为 general，将来某些外设需要重写中断处理程序
-        idt_table[i] = general_intr_handler;                              
-        intr_name[i] = "unknown"; // 先统一赋值 unknown 
+        idt_table[i] = general_intr_handler;
+        intr_name[i] = "unknown"; // 先统一赋值 unknown
     }
     intr_name[0]  = "#DE Divide Error";
     intr_name[1]  = "#DB Debug Exception";
@@ -100,7 +100,7 @@ static void exception_init(void) {
     intr_name[12] = "#SS Stack Fault Exception";
     intr_name[13] = "#GP General Protection Exception";
     intr_name[14] = "#PF Page-Fault Exception";
-    // intr_name[15] intel 保留项 
+    // intr_name[15] intel 保留项
     intr_name[16] = "#MF x87 FPU Floating-Point Error";
     intr_name[17] = "#AC Alignment Check Exception";
     intr_name[18] = "#MC Machine-Check Exception";
@@ -123,7 +123,7 @@ static void pic_init(void) {
     outb (PIC_S_DATA, 0x01);    // ICW4: 8086模式, 正常EOI（手动结束）
     
     put_str("   pic_init done!\n");
-
+    
     /* 打开主片上IR0,也就是目前只接受时钟产生的中断 */
     outb (PIC_M_DATA, 0xfe);    // 对应位写1屏蔽中断
     outb (PIC_S_DATA, 0xff);    // 从片屏蔽所有中断
@@ -150,47 +150,47 @@ static void idt_desc_init(void) {
 
 /* 开中断并返回开中断前的状态*/
 enum intr_status intr_enable() {
-   enum intr_status old_status;
-   if (INTR_ON == intr_get_status()) {
-      old_status = INTR_ON;
-      return old_status;
-   } else {
-      old_status = INTR_OFF;
-      asm volatile("sti");   // 开中断,sti指令将IF位置1
-      return old_status;
-   }
+    enum intr_status old_status;
+    if (INTR_ON == intr_get_status()) {
+        old_status = INTR_ON;
+        return old_status;
+    } else {
+        old_status = INTR_OFF;
+        asm volatile("sti");   // 开中断,sti指令将IF位置1
+        return old_status;
+    }
 }
 
 /* 关中断,并且返回关中断前的状态 */
-enum intr_status intr_disable() {     
-   enum intr_status old_status;
-   if (INTR_ON == intr_get_status()) {
-      old_status = INTR_ON;
-      asm volatile("cli" : : : "memory"); // 关中断,cli指令将IF位置0
-      return old_status;
-   } else {
-      old_status = INTR_OFF;
-      return old_status;
-   }
+enum intr_status intr_disable() {
+    enum intr_status old_status;
+    if (INTR_ON == intr_get_status()) {
+        old_status = INTR_ON;
+        asm volatile("cli" : : : "memory"); // 关中断,cli指令将IF位置0
+        return old_status;
+    } else {
+        old_status = INTR_OFF;
+        return old_status;
+    }
 }
 
 /* 将中断状态设置为status，返回旧status */
 enum intr_status intr_set_status(enum intr_status status) {
-   return status & INTR_ON ? intr_enable() : intr_disable();
+    return status & INTR_ON ? intr_enable() : intr_disable();
 }
 
 /* 获取当前中断状态 */
 enum intr_status intr_get_status() {
-   uint32_t eflags = 0; 
-   GET_EFLAGS(eflags);
-   return (EFLAGS_IF & eflags) ? INTR_ON : INTR_OFF; // 取 IF 位
+    uint32_t eflags = 0;
+    GET_EFLAGS(eflags);
+    return (EFLAGS_IF & eflags) ? INTR_ON : INTR_OFF; // 取 IF 位
 }
- 
+
 /* 在中断处理程序数组第vector_no个元素中注册安装中断处理程序function */
 void register_handler(uint8_t vector_no, intr_handler function) {
-/* idt_table数组中的函数是在进入中断后根据中断向量号调用的,
- * 见kernel/kernel.S的call [idt_table + %1*4] */
-   idt_table[vector_no] = function; 
+    /* idt_table数组中的函数是在进入中断后根据中断向量号调用的,
+     * 见kernel/kernel.S的call [idt_table + %1*4] */
+    idt_table[vector_no] = function;
 }
 
 /*完成有关中断的所有初始化工作*/

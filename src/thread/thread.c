@@ -17,7 +17,7 @@ static struct list_elem* thread_tag;// 用于保存队列中的线程结点
 extern void switch_to(struct task_struct* cur, struct task_struct* next);
 
 /** 获取当前线程pcb指针 */
-struct task_struct* running_thread() {
+inline struct task_struct* running_thread() {
     uint32_t esp;
     asm ("mov %%esp, %0" : "=g" (esp));
     // 栈指针以4K取整，即pcb起始地址
@@ -29,7 +29,33 @@ static void kernel_thread(thread_func* function, void* func_arg) {
     /* 执行function前要开中断,避免后面的时钟中断被屏蔽,而无法调度其它线程 */
     intr_enable();
     function(func_arg);
+    // 开始回收
+    
 }
+
+void thread_block(enum task_status stat) {
+    // 3 three status wont be schedule
+    ASSERT(stat == TASK_BLOCKED || stat == TASK_WAITING || stat == TASK_HANGING);
+    enum intr_status old_status = intr_disable();
+    running_thread()->status = stat;
+    schedule();
+    intr_set_status(old_status);
+}
+
+void thread_unblock(struct task_struct* pthread) {
+    enum intr_status old_status = intr_disable();
+    enum task_status p_stat = pthread->status;
+    ASSERT(p_stat == TASK_HANGING || p_stat == TASK_WAITING || p_stat == TASK_BLOCKED);
+    if (p_stat != TASK_READY) {
+        if (elem_find(&thread_ready_list, &pthread->general_tag)) {
+            PANIC("find blocked thread in ready list\n");
+        }
+        list_push(&thread_ready_list, &pthread->general_tag);
+        pthread->status = TASK_READY;
+    } 
+    intr_set_status(old_status); 
+}
+ 
 
 /* 初始化线程栈thread_stack,将待执行的函数和参数放到thread_stack中相应的位置 */
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg) {

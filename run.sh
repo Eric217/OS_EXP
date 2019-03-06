@@ -1,6 +1,5 @@
 #! /bin/bash
-script_path = $(cd "$(dirname "$0")";pwd)
-cd ${script_path}
+cd $(cd "$(dirname "$0")";pwd)
 
 if [ $1 = "r" ];then 
 	make all-r
@@ -8,6 +7,7 @@ else
 	make all
 fi
 
-cd ${script_path}/run
+cd run
 bochs -f bochsrc
+
 

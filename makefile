@@ -3,7 +3,7 @@
 # $<，依赖文件中的第1个文件 < 指向最左侧，第一个
 # $^，所有依赖文件的集合，自动去重。^很像从上往下罩的动作，集合
 # $?，所有比目标文件 mtime 新的依赖文件集合 
-PROJECT = .
+PROJECT = $(PWD)
 
 SRC_DIR = $(PROJECT)/src
 OBJ_DIR = $(PROJECT)/.build/object
@@ -28,7 +28,8 @@ LDFLAGS = -Ttext $(ENTRY_POINT) -e main -Map $(MAPFILE)
 OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/init.o $(OBJ_DIR)/interrupt.o \
       $(OBJ_DIR)/timer.o $(OBJ_DIR)/kernel.o $(OBJ_DIR)/print.o \
       $(OBJ_DIR)/debug.o $(OBJ_DIR)/memory.o $(OBJ_DIR)/bitmap.o $(OBJ_DIR)/string.o \
-      $(OBJ_DIR)/thread.o $(OBJ_DIR)/list.o $(OBJ_DIR)/switch.o 
+      $(OBJ_DIR)/thread.o $(OBJ_DIR)/list.o $(OBJ_DIR)/switch.o $(OBJ_DIR)/sync.o \
+      $(OBJ_DIR)/console.o
 
 ##############     c代码编译     ###############
 $(OBJ_DIR)/main.o: $(SRC_DIR)/kernel/main.c 
@@ -59,6 +60,12 @@ $(OBJ_DIR)/thread.o: $(SRC_DIR)/thread/thread.c
 	$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ_DIR)/list.o: $(SRC_DIR)/lib/kernel/list.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/sync.o: $(SRC_DIR)/thread/sync.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/console.o: $(SRC_DIR)/device/console.c 
 	$(CC) $(CFLAGS) $< -o $@
 
 
