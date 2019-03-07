@@ -3,3 +3,4 @@ log.txt
 *.img
 *.img.lock 
 .build/
+.idea/
