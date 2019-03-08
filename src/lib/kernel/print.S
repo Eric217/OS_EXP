@@ -78,7 +78,8 @@ put_char:
 jz  .is_carriage_return  	; 这里 回车符 或 换行符 都按 回车换行 CRLF 处理 
 	cmp cl,  0xa
 jz  .is_line_feed
-
+	cmp cl,  0x9
+jz  .is_tab					; 怎么打印 tab？我直接替换为空格了
 	cmp cl,  0x8		  	; BS backspace 是8
 jz  .is_backspace
 
@@ -95,7 +96,8 @@ jmp .put_other
 	shr bx, 1 				; 除以二为当前光标应该在的位置 
 jmp .set_cursor
 
-
+.is_tab:
+	mov cl, 0x20
 .put_other:
 	shl bx, 1				; 光标值乘2，字节
 	mov [gs:bx], cl			; ascii字符本身

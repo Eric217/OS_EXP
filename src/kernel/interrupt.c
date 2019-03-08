@@ -9,7 +9,7 @@
 #define PIC_S_CTRL 0xa0         // 从片的控制端口是0xa0
 #define PIC_S_DATA 0xa1         // 从片的数据端口是0xa1
 
-#define IDT_DESC_CNT 0x21       // 目前总共支持的中断数 33个
+#define IDT_DESC_CNT 0x30       // 目前总共支持的中断数 33个
 
 #define EFLAGS_IF 0x00000200    // eflags寄存器中的if位为1的16进制表示
 // 寄存器约束g 约束 EFLAG_VAR 可以放在内存或寄存器中，pushfl 把 eflags 压栈，
@@ -124,8 +124,8 @@ static void pic_init(void) {
     
     put_str("   pic_init done!\n");
     
-    /* 打开主片上IR0,也就是目前只接受时钟产生的中断 */
-    outb (PIC_M_DATA, 0xfe);    // 对应位写1屏蔽中断
+    // 目前 接受时钟、键盘 中断
+    outb (PIC_M_DATA, 0xfc);    // 对应位写1屏蔽中断
     outb (PIC_S_DATA, 0xff);    // 从片屏蔽所有中断
 }
 

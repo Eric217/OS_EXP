@@ -29,7 +29,7 @@ OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/init.o $(OBJ_DIR)/interrupt.o \
       $(OBJ_DIR)/timer.o $(OBJ_DIR)/kernel.o $(OBJ_DIR)/print.o \
       $(OBJ_DIR)/debug.o $(OBJ_DIR)/memory.o $(OBJ_DIR)/bitmap.o $(OBJ_DIR)/string.o \
       $(OBJ_DIR)/thread.o $(OBJ_DIR)/list.o $(OBJ_DIR)/switch.o $(OBJ_DIR)/sync.o \
-      $(OBJ_DIR)/console.o
+      $(OBJ_DIR)/console.o $(OBJ_DIR)/keyboard.o $(OBJ_DIR)/ioqueue.o 
 
 ##############     c代码编译     ###############
 $(OBJ_DIR)/main.o: $(SRC_DIR)/kernel/main.c 
@@ -66,6 +66,12 @@ $(OBJ_DIR)/sync.o: $(SRC_DIR)/thread/sync.c
 	$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ_DIR)/console.o: $(SRC_DIR)/device/console.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/keyboard.o: $(SRC_DIR)/device/keyboard.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/ioqueue.o: $(SRC_DIR)/device/ioqueue.c 
 	$(CC) $(CFLAGS) $< -o $@
 
 

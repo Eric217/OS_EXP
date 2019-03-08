@@ -2,9 +2,9 @@
 
 void console_init(void);
 
-void console_lock();
+void console_lock(void);
 
-void console_unlock();
+void console_unlock(void);
 
 void console_put_str(char *str);
 

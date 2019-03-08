@@ -1,14 +1,11 @@
+; 回顾中断发生过程、栈的变化
+
 [bits 32]
-; 中断发生时，处理器要在目标栈中保存被中断进程的部分寄存器环境，自动完成。保存的寄存器名称及顺序是：
-; (1）如果发生了特权级转移，如3->0，要把低特权级的ss及sp保存到栈中
-; (2）eflags (3）压入返回地址 cs eip (4）如果此中断有错误码，压入错误码
 %define ZERO         push 0; 若在相关的异常中cpu没有压入错误码,为了统一栈顶指针使add 4都能恢复，压0
 %define ERROR_CODE   nop   ; 查表哪些中断需要操作
-
-extern put_str             
+        
 extern idt_table           ; C 中断处理函数数组
-
-
+ 
 section .data
  
 global intr_entry_table
@@ -17,7 +14,8 @@ intr_entry_table:          ; 宏里数据段拼一起最后成为entry数组，�
 %macro VECTOR 2
 section .text
 intr%1entry:               ; 每个中断向量号都对应一个中断处理程序 
-   %2                      ; 压入eip后即执行
+                           ; 自动压入 (ss,sp), eflags, cs eip, (err_code)
+   %2                      ; 统一 error_code 压一次栈
                            
    push ds                 ; 调用C程序前必须 backup reg
    push es
@@ -90,4 +88,21 @@ VECTOR 0x1c,ZERO
 VECTOR 0x1d,ERROR_CODE
 VECTOR 0x1e,ERROR_CODE
 VECTOR 0x1f,ZERO 
-VECTOR 0x20,ZERO
+
+VECTOR 0x20,ZERO  ; 时钟中断对应的入口
+VECTOR 0x21,ZERO  ; 键盘中断对应的入口
+VECTOR 0x22,ZERO  ; 级联用的
+VECTOR 0x23,ZERO  ; 串口2对应的入口
+VECTOR 0x24,ZERO  ; 串口1对应的入口
+VECTOR 0x25,ZERO  ; 并口2对应的入口
+VECTOR 0x26,ZERO  ; 软盘对应的入口
+VECTOR 0x27,ZERO  ; 并口1对应的入口
+VECTOR 0x28,ZERO  ; 实时时钟对应的入口
+VECTOR 0x29,ZERO  ; 重定向
+VECTOR 0x2a,ZERO  ; 保留
+VECTOR 0x2b,ZERO  ; 保留
+VECTOR 0x2c,ZERO  ; ps/2鼠标
+VECTOR 0x2d,ZERO  ; fpu浮点单元异常
+VECTOR 0x2e,ZERO  ; 硬盘
+VECTOR 0x2f,ZERO  ; 保留
+

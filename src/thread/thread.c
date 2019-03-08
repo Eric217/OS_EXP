@@ -29,12 +29,17 @@ static void kernel_thread(thread_func* function, void* func_arg) {
     /* 执行function前要开中断,避免后面的时钟中断被屏蔽,而无法调度其它线程 */
     intr_enable();
     function(func_arg);
-    // 开始回收
-    
+    // 接下来 永久把这个线程消灭，我猜测的流程是：
+    // TASK_DIED
+    // SCHEDULE
+    // 有专门的线程负责把 DIED TASK 从链表中移除；回收 kmemory
+    intr_disable();
+    running_thread()->status = TASK_DIED;
+    schedule();
 }
 
 void thread_block(enum task_status stat) {
-    // 3 three status wont be schedule
+    // 3 status are allowed
     ASSERT(stat == TASK_BLOCKED || stat == TASK_WAITING || stat == TASK_HANGING);
     enum intr_status old_status = intr_disable();
     running_thread()->status = stat;
