@@ -64,7 +64,7 @@ struct thread_stack {
      其它时候,eip是指向switch_to的返回地址*/
     void (*eip) (thread_func* func, void* func_arg);
     
-    /*****   以下仅供第一次被调度上cpu时使用   ****/
+    /*****   以下仅第一次被调度上cpu时用到   ****/
     void (*unused_retaddr); // 参数 unused_ret 为返回地址占位
     thread_func* function;  // 由Kernel_thread所调用的函数名
     void* func_arg;         // 由Kernel_thread所调用的函数所需的参数

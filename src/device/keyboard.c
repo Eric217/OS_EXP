@@ -182,9 +182,6 @@ static void intr_keyboard_handler(void) {
         /* 只处理ascii码不为0的键，加入到缓冲区中 */
         if (cur_char) {
             if (!ioq_full(&kbd_buf)) {
-                if (cur_char == '\t') put_str("    ");
-                else put_char(cur_char);
-    
                 ioq_putchar(&kbd_buf, cur_char);
             }
             return;

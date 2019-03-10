@@ -64,6 +64,7 @@ void thread_unblock(struct task_struct* pthread) {
 
 /* 初始化线程栈thread_stack,将待执行的函数和参数放到thread_stack中相应的位置 */
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg) {
+    // 我其实没明白真的有必要预留这些吗
     pthread->self_kstack -= sizeof(struct intr_stack); // 预留中断栈空间
     pthread->self_kstack -= sizeof(struct thread_stack); // 留出线程栈空间 
     
