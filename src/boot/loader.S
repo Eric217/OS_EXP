@@ -228,7 +228,7 @@ p_mode_start:
 	enter_kernel:
 		call kernel_init
 		mov esp, 0xc009f000
-			; 每个 pcb 都是自然页，也就是要求 4KB 对齐，我们选择：
+			; 将来每个 pcb 都是自然页，也就是要求 4KB 对齐，我们选择：
 			; 接近最大可用地址 0x9fbff，并以 4KB对齐，所以 0x9f000 最合适 
 	jmp KERNEL_ENTRY_POINT  	; 实际上 e_entry 可以在下面解析出来，这里直接写死了
  

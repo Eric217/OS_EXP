@@ -6,9 +6,7 @@
 #include "global.h"
 #include "debug.h"
 #include "interrupt.h"
-
-#define PG_SIZE 4096
-
+ 
 /***************  位图地址 ********************
  * 因为0xc009f000是内核主线程栈顶，0xc009e000是内核主线程的pcb.
  * 一个页框大小的位图32K bit * 4KB = 128M 可表示128M内存,
@@ -236,7 +234,7 @@ static void mem_pool_init(uint32_t all_mem) {
 void mem_init() {
     put_str("mem_init start...\n");
     // 0xb08 就是 loader里获取内存容量后存放的位置
-    uint32_t mem_bytes_total = (*(uint32_t*)(0xb08)); 
+    uint32_t mem_bytes_total = (*(uint32_t*)(GDT_BASE_ADDR + GDT_TOTAL_SIZE)); 
     // put_int(mem_bytes_total/1024);
     // put_str(" KB：当前32位系统，寄存器进位都丢失了所以显示这个结果。已重新设置系统内存为 4GB。\n");
     // mem_bytes_total = 0xffffffff;

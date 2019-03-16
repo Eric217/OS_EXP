@@ -15,16 +15,8 @@
 // 寄存器约束g 约束 EFLAG_VAR 可以放在内存或寄存器中，pushfl 把 eflags 压栈，
 // popl 将其弹出到与 EFLAG_VAR 关联的约束中，C变量 EFLAG_VAR 得到 eflags 值。
 #define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl; popl %0" : "=g" (EFLAG_VAR))
-
-/* 中断门描述符 结构体 */
-struct gate_desc {
-    uint16_t    func_offset_low_word;
-    uint16_t    selector;
-    uint8_t     dcount;        // 此项为双字计数字段，是门描述符中的第4字节。此项固定值，不用考虑
-    uint8_t     attribute;
-    uint16_t    func_offset_high_word;
-};
-
+ 
+ 
 // 静态函数声明,全局数据结构
 static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function);
 
