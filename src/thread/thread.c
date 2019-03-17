@@ -64,9 +64,9 @@ void thread_unblock(struct task_struct* pthread) {
 
 /* 初始化线程栈thread_stack,将待执行的函数和参数放到thread_stack中相应的位置 */
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg) {
-    // 我其实没明白真的有必要预留这些吗
-    pthread->self_kstack -= sizeof(struct intr_stack); // 预留中断栈空间
-    pthread->self_kstack -= sizeof(struct thread_stack); // 留出线程栈空间 
+    
+    pthread->self_kstack -= sizeof(struct intr_stack); // 为了启动用户进程预留，线程用不到。其实这一项在使用时也是可以不用的...
+    pthread->self_kstack -= sizeof(struct thread_stack); // 为了启动线程预留 
     
     struct thread_stack* kthread_stack = (struct thread_stack*)pthread->self_kstack;
     kthread_stack->eip = kernel_thread;
@@ -96,7 +96,7 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
 /* 创建一优先级为prio的线程,线程名为name,线程所执行的函数是function(func_arg) */
 struct task_struct* thread_start(char* name, int prio, thread_func function, void* func_arg) {
     /* pcb都位于内核空间,包括用户进程的pcb也是在内核空间 */
-    struct task_struct* thread = get_kernel_pages(1);
+    struct task_struct* thread = get_pages(1, PF_KERNEL);
     
     init_thread(thread, name, prio);
     thread_create(thread, function, func_arg);

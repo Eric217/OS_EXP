@@ -31,7 +31,7 @@ OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/init.o $(OBJ_DIR)/interrupt.o \
       $(OBJ_DIR)/debug.o $(OBJ_DIR)/memory.o $(OBJ_DIR)/bitmap.o $(OBJ_DIR)/string.o \
       $(OBJ_DIR)/thread.o $(OBJ_DIR)/list.o $(OBJ_DIR)/switch.o $(OBJ_DIR)/sync.o \
       $(OBJ_DIR)/console.o $(OBJ_DIR)/keyboard.o $(OBJ_DIR)/ioqueue.o \
-      $(OBJ_DIR)/tss.o 
+      $(OBJ_DIR)/tss.o $(OBJ_DIR)/process.o 
 
 all: mk_dir build hd
 	
@@ -79,6 +79,9 @@ $(OBJ_DIR)/ioqueue.o: $(SRC_DIR)/device/ioqueue.c
 	$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ_DIR)/tss.o: $(SRC_DIR)/userprog/tss.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/process.o: $(SRC_DIR)/userprog/process.c 
 	$(CC) $(CFLAGS) $< -o $@
 
 

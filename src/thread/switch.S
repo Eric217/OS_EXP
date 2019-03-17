@@ -18,6 +18,7 @@ switch_to:
     mov eax, [esp + 24]	    ; 栈中的参数next, next = [esp+24]
     mov esp, [eax]		    ; pcb的第一个成员是self_kstack成员,用来记录0级栈顶指针,
 				            ; 用来上cpu时恢复0级栈,0级栈中保存了进程或线程所有信息,包括3级栈指针
+                            ; 第一次恢复时 esp 指向的是线程栈，里面是伪造好的函数调用
     pop ebp
     pop ebx
     pop edi

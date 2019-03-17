@@ -41,7 +41,7 @@ section .data
 %endmacro
 
 section .text
-global intr_exit
+global intr_exit           ; 此处伏笔，为进入特权级3 方便直接调用
 intr_exit:
    add esp, 4              ; push %1
    popad
