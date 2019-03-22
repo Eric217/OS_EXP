@@ -1,6 +1,6 @@
 #ifndef __THREAD_THREAD_H
 #define __THREAD_THREAD_H
-#include "stdint.h"
+#include "memory.h"
 #include "list.h"
 
 /* 自定义通用函数类型,它将在很多线程函数中做为形参类型 */
@@ -81,14 +81,16 @@ struct task_struct {
     uint32_t            elapsed_ticks;  // 此任务自上cpu运行后至今占用了多少cpu嘀嗒数,
      
     struct list_elem    general_tag;    // 线程队列 thread_ready_list 中的结点
-     
     struct list_elem    all_list_tag;   // 线程队列 thread_all_list 中的结点 
     
     uint32_t*           pgdir;          // 进程自己页表的虚拟地址
-    struct virtual_addr userprog_vaddr;
+    struct virtual_addr userprog_vaddr; // 用户进程也要维护自己的堆内存
 
-    uint32_t            stack_magic;    // 用这串数字做栈的边界标记,用于检测栈的溢出
+    uint32_t            stack_magic;    // 栈的边界标记 用于检测栈的溢出
 };
+
+extern struct list thread_ready_list;
+extern struct list thread_all_list;
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg);
 void init_thread(struct task_struct* pthread, char* name, int prio);
@@ -99,8 +101,6 @@ void thread_init(void);
 
 void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct* pthread); 
-
-
 
 #endif
 

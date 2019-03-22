@@ -6,13 +6,12 @@
 #include "interrupt.h"
 #include "print.h"
 #include "memory.h"
-
-#define PG_SIZE 4096
+#include "process.h"
 
 struct task_struct* main_thread;    // 主线程PCB
+
 struct list thread_ready_list;       // 就绪队列
 struct list thread_all_list;      // 所有任务队列
-static struct list_elem* thread_tag;// 用于保存队列中的线程结点
 
 extern void switch_to(struct task_struct* cur, struct task_struct* next);
 
@@ -20,7 +19,7 @@ extern void switch_to(struct task_struct* cur, struct task_struct* next);
 inline struct task_struct* running_thread() {
     uint32_t esp;
     asm ("mov %%esp, %0" : "=g" (esp));
-    // 栈指针以4K取整，即pcb起始地址
+    // 栈指针 4K 取整 -> PCB 起始地址
     return (struct task_struct*)(esp & 0xfffff000);
 }
 
@@ -32,7 +31,8 @@ static void kernel_thread(thread_func* function, void* func_arg) {
     // 接下来 永久把这个线程消灭，我猜测的流程是：
     // TASK_DIED
     // SCHEDULE
-    // 有专门的线程负责把 DIED TASK 从链表中移除；回收 kmemory
+    // 有专门的线程负责把 DIED TASK 从链表中移除；
+    // 回收 kmemory。Linux 中好像直接做了 Cache，如 始终有65536个PCB
     intr_disable();
     running_thread()->status = TASK_DIED;
     schedule();
@@ -60,9 +60,8 @@ void thread_unblock(struct task_struct* pthread) {
     } 
     intr_set_status(old_status); 
 }
- 
-
-/* 初始化线程栈thread_stack,将待执行的函数和参数放到thread_stack中相应的位置 */
+  
+/** 初始化线程栈thread_stack：保存任务函数和参数 */
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg) {
     
     pthread->self_kstack -= sizeof(struct intr_stack); // 为了启动用户进程预留，线程用不到。其实这一项在使用时也是可以不用的...
@@ -127,6 +126,8 @@ static void make_main_thread(void) {
     list_append(&thread_all_list, &main_thread->all_list_tag);
 }
 
+static struct list_elem* thread_tag; // temp container
+
 /* 实现任务调度 */
 void schedule() {
     
@@ -144,22 +145,23 @@ void schedule() {
     }
     
     ASSERT(!list_empty(&thread_ready_list));
-    thread_tag = NULL;     // thread_tag清空
     /* 将thread_ready_list队列中的第一个就绪线程弹出,准备将其调度上cpu. */
     thread_tag = list_pop(&thread_ready_list);
     struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
     next->status = TASK_RUNNING;
+    process_activate(next);
+
     switch_to(cur, next);
 }
 
 /* 初始化线程环境 */
 void thread_init(void) {
-    put_str("thread_init start\n");
+    put_str("   thread_init start...\n");
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
     /* 将当前main函数创建为线程 */
     make_main_thread();
-    put_str("thread_init done\n");
+    put_str("   thread_init done!\n");
 }
 
 

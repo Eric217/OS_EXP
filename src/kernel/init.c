@@ -10,17 +10,18 @@
 
 /*负责初始化所有模块 */
 void init_all() {
-	put_str("Initializing...\n");
-   	idt_init();   	// 初始化中断
-   	timer_init();	// 初始化PIT
-   	thread_init(); 
-   	mem_init();
-   	console_init();
-   	keyboard_init();
+    put_str("Initializing...\n");
+    idt_init();       // 初始化中断
+    timer_init();    // 初始化PIT
+    thread_init();
+    mem_init();
+    console_init();
+    keyboard_init();
     tss_init();
-
-
-
-
-   	intr_enable();	 
+    
+    put_str("All Initialization Complete!\n");
+    
+    
+    
+    intr_enable();
 }

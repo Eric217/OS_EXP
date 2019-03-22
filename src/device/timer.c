@@ -39,7 +39,7 @@ static void intr_timer_handler(void) {
 
    ASSERT(cur_thread->stack_magic == 0x19870916);         // 检查栈是否溢出
 
-   cur_thread->elapsed_ticks++;    // 记录此线程占用的cpu时间嘀
+   cur_thread->elapsed_ticks++;    // 记录此线程占用的cpu时间
    ticks++;   //从内核第一次处理时间中断后开始至今的滴哒数,内核态和用户态总共的嘀哒数
 
    if (cur_thread->ticks == 0) {   // 若进程时间片用完就开始调度新的进程上cpu
@@ -52,10 +52,10 @@ static void intr_timer_handler(void) {
 
 /* 初始化PIT8253 */
 void timer_init() {
-   put_str("timer_init start...\n");
+   put_str("   timer_init start...\n");
    /* 设置8253的定时周期,也就是发中断的周期 */
    frequency_set(CONTRER0_PORT, COUNTER0_NO, READ_WRITE_LATCH, COUNTER_MODE, COUNTER0_VALUE);
    register_handler(0x20, intr_timer_handler);
 
-   put_str("timer_init done!\n");
+   put_str("   timer_init done!\n");
 }

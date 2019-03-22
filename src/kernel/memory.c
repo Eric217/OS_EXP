@@ -18,16 +18,11 @@
 #define PTE_IDX(addr) ((addr & 0x003ff000) >> 12) // mid 10 bit
 
 /* 内核从虚拟地址3GB(0xc0000000)起,0x100000意指跨过低端1M内存,使虚拟地址在逻辑上连续 */
-#define K_HEAP_START 0xc0100000
+#define K_HEAP_START (KERNEL_SPACE + 0x100000)
+ 
+struct pool kernel_pool;
+struct pool user_pool;     // 生成内核内存池和用户内存池
 
-/* 内存池结构,生成两个实例用于管理内核内存池和用户内存池 */
-struct pool {
-    struct bitmap pool_bitmap;  // 本内存池用到的位图结构,用于管理物理内存
-    uint32_t phy_addr_start;    // 本内存池所管理物理内存的起始地址
-    uint32_t pool_size;         // 本内存池字节容量
-};  
-
-struct pool kernel_pool, user_pool;     // 生成内核内存池和用户内存池
 struct virtual_addr kernel_vaddr;       // 此结构是用来给内核分配虚拟地址
 
 /* 在pf表示的虚拟内存池中申请pg_cnt个虚拟页,
@@ -60,7 +55,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
         while(cnt < pg_cnt) 
             bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 1);
         vaddr_start = cur->userprog_vaddr.vaddr_start + bit_idx_start * PG_SIZE;
-        ASSERT(vaddr_start < (KERNEL_SPACE - PG_SIZE));
+        ASSERT(vaddr_start < (int)(KERNEL_SPACE - PG_SIZE));
 
     }
     intr_set_status(old_status);
@@ -179,9 +174,8 @@ void* malloc_page(enum pool_flags pf, uint32_t pg_cnt) {
 /* 从内核物理内存池中申请pg_cnt页内存,成功则返回其虚拟地址,失败则返回NULL */
 void* get_pages(uint32_t pg_cnt, enum pool_flags flag) {
     void* vaddr =  malloc_page(flag, pg_cnt);
-    if (vaddr != NULL) {    // 页框清0后返回
+    if (vaddr != NULL)    // 页框清0后返回
         memset(vaddr, 0, pg_cnt * PG_SIZE);
-    }
     return vaddr;
 }
 
@@ -231,10 +225,9 @@ uint32_t addr_v2p(uint32_t vaddr) {
     return ((*pte & 0xfffff000) + (vaddr & 0x00000fff));
 }
 
-
 /* 初始化内存池 */
 static void mem_pool_init(uint32_t all_mem) {
-    put_str("   mem_pool_init start...\n");
+    put_str("     mem_pool_init start...\n");
     uint32_t page_table_size = PG_SIZE * 256;            
     // 为实现内核共享，loader里内核空间的1GB对应的页表已经初始化了
     // 1页目录表+第0和第768个页目录项指向同一个页表+
@@ -253,7 +246,7 @@ static void mem_pool_init(uint32_t all_mem) {
     uint32_t ubm_length = user_free_pages   / 8;        // User BitMap的长度.
     
     uint32_t kp_start = used_mem;                       // Kernel Pool start,内核内存池的起始地址
-    uint32_t up_start = kp_start + kernel_free_pages * PG_SIZE; // User Pool start，用户内存池的起始地址
+    uint32_t up_start = kp_start + kernel_free_pages * PG_SIZE; // 用户池起始地址
     
     kernel_pool.phy_addr_start = kp_start;
     user_pool.phy_addr_start   = up_start;
@@ -272,12 +265,14 @@ static void mem_pool_init(uint32_t all_mem) {
     // 用户内存池的位图紧跟在内核内存池位图之后 
     user_pool.pool_bitmap.bits = (void*)(MEM_BITMAP_BASE + kbm_length);
      
-    put_str("      kernel_pool_bitmap_start: ");put_int((int)kernel_pool.pool_bitmap.bits);
-    put_str(" kernel_pool_phy_addr_start: ");put_int(kernel_pool.phy_addr_start);
-    put_str("\n");
-    put_str("      user_pool_bitmap_start: ");put_int((int)user_pool.pool_bitmap.bits);
-    put_str(" user_pool_phy_addr_start: ");put_int(user_pool.phy_addr_start);
-    put_str("\n");
+    put_str("       kernel_pool_bitmap_start: ");
+        put_int((int)kernel_pool.pool_bitmap.bits);
+    put_str("\n       kernel_pool_phy_addr_start: ");
+        put_int(kernel_pool.phy_addr_start);
+    put_str("\n       user_pool_bitmap_start: ");
+        put_int((int)user_pool.pool_bitmap.bits);
+    put_str("\n       user_pool_phy_addr_start: ");
+        put_int(user_pool.phy_addr_start);
    
     bitmap_init(&kernel_pool.pool_bitmap);
     bitmap_init(&user_pool.pool_bitmap);
@@ -289,19 +284,19 @@ static void mem_pool_init(uint32_t all_mem) {
     
     kernel_vaddr.vaddr_start = K_HEAP_START;
     bitmap_init(&kernel_vaddr.vaddr_bitmap);
-    put_str("   mem_pool_init done!\n");
+    put_str("\n     mem_pool_init done!\n");
 }
 
 /* 内存管理部分初始化入口 */
 void mem_init() {
-    put_str("mem_init start...\n");
+    put_str("   mem_init start...\n");
     // 0xb08 就是 loader里获取内存容量后存放的位置
     uint32_t mem_bytes_total = (*(uint32_t*)(GDT_BASE_ADDR + GDT_TOTAL_SIZE)); 
     // put_int(mem_bytes_total/1024);
     // put_str(" KB：当前32位系统，寄存器进位都丢失了所以显示这个结果。已重新设置系统内存为 4GB。\n");
     // mem_bytes_total = 0xffffffff;
     mem_pool_init(mem_bytes_total);      // 初始化内存池
-    put_str("mem_init done!\n");
+    put_str("   mem_init done!\n");
 }
 
 

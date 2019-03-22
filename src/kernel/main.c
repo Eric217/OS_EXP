@@ -1,14 +1,19 @@
-#include "print.h"
-#include "init.h"
-#include "interrupt.h" 
-#include "console.h"
- 
+#include "init.h" 
 
-int main(void) { 
-   init_all();
-  
+#include "process.h"
+
+void u_prog_a(void);
+
+int main(void) {
+    init_all();
     
-   while(1);
-   return 0;
-} 
- 
+    process_execute(u_prog_a, "user_prog_a");
+    	
+    while(1);
+    return 0;
+}
+
+void u_prog_a(void) {
+   
+    while(1);
+}

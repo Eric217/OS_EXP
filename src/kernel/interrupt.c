@@ -187,7 +187,7 @@ void register_handler(uint8_t vector_no, intr_handler function) {
 
 /*完成有关中断的所有初始化工作*/
 void idt_init() {
-    put_str("idt_init start...\n");
+    put_str("   idt_init start...\n");
     idt_desc_init();       // 初始化中断描述符表
     exception_init();     // 异常名初始化并注册通常的中断处理函数
     pic_init();           // 初始化8259A
@@ -195,6 +195,6 @@ void idt_init() {
     /* 加载idt: limit or int-pointer-shl-16 -> uint64, lidt ptr-of-48-bit */
     uint64_t idt_operand = ((sizeof(idt) - 1) | ((uint64_t)(uint32_t)idt << 16));
     asm volatile("lidt %0" : : "m" (idt_operand));
-    put_str("idt_init done!\n");
+    put_str("   idt_init done!\n");
 }
 

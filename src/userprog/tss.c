@@ -41,7 +41,7 @@ struct tss {
 
 static struct tss tss;
 
-/* 更新tss中esp0字段的值为pthread的0级线 */
+/** 更新tss中esp0字段的值为pthread的0级线 */
 void update_tss_esp(struct task_struct* pthread) {
     tss.esp0 = (uint32_t*)((uint32_t)pthread + PG_SIZE);
 }
@@ -63,7 +63,7 @@ static struct gdt_desc make_gdt_desc(
 
 /* 在gdt中创建tss并重新加载gdt */
 void tss_init() {
-    put_str("tss_init start\n");
+    put_str("   tss_init start...\n");
     uint32_t tss_size = sizeof(tss);
     memset(&tss, 0, tss_size);
     tss.ss0 = SELECTOR_K_STACK;
@@ -83,6 +83,6 @@ void tss_init() {
     uint64_t gdt_operand = ((8 * 7 - 1) | ((uint64_t)(uint32_t)(KERNEL_SPACE + GDT_BASE_ADDR) << 16));   // 7个描述符大小
     asm volatile ("lgdt %0" : : "m" (gdt_operand));
     asm volatile ("ltr %w0" : : "r" (SELECTOR_TSS));
-    put_str("tss_init and ltr done\n");
+    put_str("   tss_init and ltr done!\n");
 }
 

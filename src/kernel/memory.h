@@ -16,20 +16,31 @@ enum pool_flags {
 #define	 PG_US_S  0	// U/S 属性位值, 系统级
 #define	 PG_US_U  4	// U/S 属性位值, 用户级
 
-/* 虚拟地址池，用于虚拟地址管理 */
+/// 虚拟地址池，用于虚拟地址管理 
 struct virtual_addr {
    struct bitmap vaddr_bitmap; // 虚拟地址用到的位图结构 
    uint32_t vaddr_start;       // 虚拟地址 起始地址
 };
 
+/* 物理池 生成两个实例用于管理内核内存池和用户内存池 */
+struct pool {
+    struct bitmap pool_bitmap;  // 本内存池用到的位图结构,用于管理物理内存
+    uint32_t phy_addr_start;    // 本内存池所管理物理内存的起始地址
+    uint32_t pool_size;         // 本内存池字节容量
+};  
+
 extern struct pool kernel_pool, user_pool;
+
 void mem_init(void);
 
 void* get_pages(uint32_t pg_cnt, enum pool_flags flag);
 void* get_one_page(enum pool_flags flag, uint32_t vaddr);
 void* malloc_page(enum pool_flags pf, uint32_t pg_cnt);
+ 
 void malloc_init(void);
+
 uint32_t* pte_ptr(uint32_t vaddr);
 uint32_t* pde_ptr(uint32_t vaddr);
+uint32_t addr_v2p(uint32_t vaddr);
  
 #endif

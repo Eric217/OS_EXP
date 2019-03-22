@@ -1,10 +1,10 @@
 #! /bin/bash
 cd $(cd "$(dirname "$0")";pwd)
 
-if [[ "r" = $1 ]];then 
-	make all-r
-elif [[ "skip" = $1 ]]; then
-	\n
+if [[ $# = 2 ]]; then
+	if [[ "r" = $1 ]]; then
+		make all-r
+	fi
 else
 	make all
 fi

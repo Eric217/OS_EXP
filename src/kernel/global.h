@@ -120,8 +120,9 @@ struct gate_desc {
 
 #define PG_SIZE             4096
 #define KERNEL_SPACE        0xc0000000
+#define KERNEL_PAGE_ADDR    0x100000
 #define LOADER_BASE_ADDR    0x900  
-#define GDT_BASE_ADDR       LOADER_BASE_ADDR + 8
-#define GDT_TOTAL_SIZE      64*8
+#define GDT_BASE_ADDR       (LOADER_BASE_ADDR + 8)
+#define GDT_TOTAL_SIZE      (64*8)
 
 #endif
