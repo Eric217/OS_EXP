@@ -7,11 +7,14 @@
 #include "print.h"
 #include "memory.h"
 #include "process.h"
+#include "sync.h"
 
 struct task_struct* main_thread;    // 主线程PCB
 
 struct list thread_ready_list;       // 就绪队列
 struct list thread_all_list;      // 所有任务队列
+
+struct mutex_t pid_lock;
 
 extern void switch_to(struct task_struct* cur, struct task_struct* next);
 
@@ -36,6 +39,14 @@ static void kernel_thread(thread_func* function, void* func_arg) {
     intr_disable();
     running_thread()->status = TASK_DIED;
     schedule();
+}
+
+static pid_t allocate_pid() {
+    static pid_t next_pid = 0;
+    mutex_lock(&pid_lock);
+    next_pid ++;
+    mutex_unlock(&pid_lock);
+    return next_pid;
 }
 
 void thread_block(enum task_status stat) {
@@ -80,6 +91,8 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
     strcpy(pthread->name, name);
       
     pthread->self_kstack = (uint32_t*)((uint32_t)pthread + PG_SIZE); // 内核栈顶在页表顶部
+    // TODO: - 一个进程一个 pid 啊，需要修改（配合那个用户进程里的多线程）
+    pthread->pid = allocate_pid();
     pthread->priority = prio;
     pthread->ticks = prio;
     pthread->elapsed_ticks = 0;
@@ -157,10 +170,14 @@ void schedule() {
 /* 初始化线程环境 */
 void thread_init(void) {
     put_str("   thread_init start...\n");
+
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
+    mutex_init(&pid_lock);
+
     /* 将当前main函数创建为线程 */
     make_main_thread();
+
     put_str("   thread_init done!\n");
 }
 

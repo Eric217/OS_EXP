@@ -9,14 +9,13 @@
 #define PIC_S_CTRL 0xa0         // 从片的控制端口是0xa0
 #define PIC_S_DATA 0xa1         // 从片的数据端口是0xa1
 
-#define IDT_DESC_CNT 0x30       // 目前总共支持的中断数 33个
+#define IDT_DESC_CNT 0x81       // 目前总共支持的中断数 33个
 
 #define EFLAGS_IF 0x00000200    // eflags寄存器中的if位为1的16进制表示
 // 寄存器约束g 约束 EFLAG_VAR 可以放在内存或寄存器中，pushfl 把 eflags 压栈，
 // popl 将其弹出到与 EFLAG_VAR 关联的约束中，C变量 EFLAG_VAR 得到 eflags 值。
 #define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl; popl %0" : "=g" (EFLAG_VAR))
- 
- 
+
 // 静态函数声明,全局数据结构
 static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function);
 
@@ -27,12 +26,13 @@ static struct gate_desc idt[IDT_DESC_CNT];
 // 真正的中断处理程序，初始化时都是相同的处理方式：打印
 // 因为大部分中断是未处理的异常引起的，所以中断程序初始化就像是异常处理函数初始化，
 // 对于有意的中断，我们叫做 注册中断处理程序，即替代 处理程序数组里存的那个指针
-// lidt 之后，中断控制器收到中断，发给CPU，按约定的中断对应的下标查 idt，执行入口，执行中段程序，退出中断
+// lidt 之后，中断控制器收到中断号，发给CPU作为索引 查描述符表，找到中断处理程序入口，执行完退出
 // 那么为什么要拐弯抹角中间插一个入口表呢，直接让 idt 存中断程序不行吗？我个人的理解，
 // 中断程序是C写的，编译后寄存器根本控制不住，必须在执行C前备份reg，执行完C再恢复，还有中断返回、控制器操作等等，
 // 尽管这些可以在C里内联写，但每个程序都要重复这段，因此单独一个 kernel.S 做一个入口表
 
 extern intr_handler intr_entry_table[IDT_DESC_CNT]; // 指向kernel.S中的中断处理函数数组
+extern uint32_t syscall_handler(void);
 
 intr_handler idt_table[IDT_DESC_CNT];               // 映射上面的数组
 
@@ -114,7 +114,7 @@ static void pic_init(void) {
     outb (PIC_S_DATA, 0x02);    // ICW3: 设置从片连接到主片的IR2引脚
     outb (PIC_S_DATA, 0x01);    // ICW4: 8086模式, 正常EOI（手动结束）
     
-    put_str("   pic_init done!\n");
+    put_str("     pic_init done!\n");
     
     // 目前 接受时钟、键盘 中断
     outb (PIC_M_DATA, 0xfc);    // 对应位写1屏蔽中断
@@ -132,11 +132,13 @@ static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler 
 
 /*初始化中断描述符表*/
 static void idt_desc_init(void) {
-    int i;
-    for (i = 0; i < IDT_DESC_CNT; i++) {
+
+    for (int i = 0; i < IDT_DESC_CNT - 1; i++) {
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
     }
-    put_str("   idt_desc_init done!\n");
+    // syscall 中断门 DPL3
+    make_idt_desc(&idt[IDT_DESC_CNT-1], IDT_DESC_ATTR_DPL3, syscall_handler);
+    put_str("     idt_desc_init done!\n");
 }
 
 

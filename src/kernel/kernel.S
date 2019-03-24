@@ -106,3 +106,30 @@ VECTOR 0x2d,ZERO  ; fpu浮点单元异常
 VECTOR 0x2e,ZERO  ; 硬盘
 VECTOR 0x2f,ZERO  ; 保留
 
+extern syscall_table
+
+section .text
+global syscall_handler
+syscall_handler:
+   ZERO
+   push ds                 
+   push es
+   push fs
+   push gs
+   pushad   ; eax, c, e, b, esp, ebp, esi, edi
+
+   push 0x80
+
+   ; 3，2，1 arg
+   push edx
+   push ecx
+   push ebx
+
+   call [syscall_table + eax*4]
+   add esp, 12          ; 完成带3个参数的函数调用
+
+   mov [esp + 8*4], eax ; 函数返回值在 eax 中，将来为恢复中断备份的 eax 在 esp+8*4
+                        ; 改写备份，中断返回用户进程，实现 eax 为返回值（ABI）
+   jmp intr_exit
+   
+
