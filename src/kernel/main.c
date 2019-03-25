@@ -1,5 +1,5 @@
 #include "init.h" 
-
+#include "stdio.h"
 #include "process.h"
 
 void u_prog_a(void);
@@ -14,6 +14,6 @@ int main(void) {
 }
 
 void u_prog_a(void) {
-   
+    
     while(1);
 }

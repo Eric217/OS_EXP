@@ -1,5 +1,6 @@
 .DS_Store
 log.txt
+copy.txt
 *.img
 *.img.lock 
 .build/
