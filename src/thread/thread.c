@@ -41,8 +41,8 @@ static void kernel_thread(thread_func* function, void* func_arg) {
     schedule();
 }
 
+static pid_t next_pid = 0; 
 static pid_t allocate_pid() {
-    static pid_t next_pid = 0;
     mutex_lock(&pid_lock);
     next_pid ++;
     mutex_unlock(&pid_lock);

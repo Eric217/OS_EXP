@@ -2,7 +2,9 @@
 #define __LIB_KERNEL_LIST_H
 #include "global.h"
 
+// 某成员在结构中的偏移量
 #define offset(struct_type, member) (int)(&((struct_type*)0)->member)
+// 结构A有成员a，已知 a 的指针 a_ptr，则 A_ptr 为：a指针 - a在本结构的偏移量
 #define elem2entry(struct_type, struct_member_name, elem_ptr) \
 	 (struct_type*)((int)elem_ptr - offset(struct_type, struct_member_name))
 

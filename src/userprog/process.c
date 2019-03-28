@@ -31,6 +31,11 @@ void start_process(void* filename_) {
     // 每个进程有自己的一套地址空间，same pattern，此时已切换页表
     proc_stack->cs  = SELECTOR_U_CODE;
     proc_stack->esp = (void*)((uint32_t)get_one_page(PF_USER, USER_STACK3_VADDR)+PG_SIZE);
+    if (!proc_stack->esp) {
+        ASSERT(false);
+        // 1. 有成熟的页置换系统，根本不会出现这种情况；
+        // 2. 告知父任务 子任务创建失败并回收资源
+    }
     proc_stack->ss  = SELECTOR_U_DATA;
     proc_stack->eflags = (EFLAGS_IOPL_0 | EFLAGS_MBS | EFLAGS_IF_1);
 
@@ -41,7 +46,7 @@ void start_process(void* filename_) {
 /* 激活页表 */
 inline void page_dir_activate(struct task_struct* p_thread) {
     // TODO: - 用户级新创建的线程 页表为空，需要完善，这里需要完全重写 
-    // 思考： 每个task struct 都有 pgdir，线程创建时 值同当前进程
+    // 思考： 每个task struct 都有 pgdir，线程创建时 值同当前进程（内核线程除外）
 
     // 若为内核线程，页表地址 0x100000
     uint32_t pagedir_phy_addr = 0x100000;  
