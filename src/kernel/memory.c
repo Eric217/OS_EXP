@@ -61,8 +61,9 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
         }
         while(cnt < pg_cnt) 
             bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 1);
+        
         vaddr_start = cur->userprog_vaddr.vaddr_start + bit_idx_start * PG_SIZE;
-        ASSERT(vaddr_start < (int)(KERNEL_SPACE - PG_SIZE));
+        ASSERT((uint32_t)vaddr_start < KERNEL_SPACE - PG_SIZE);
     }
     return (void*)vaddr_start;
 }
@@ -369,9 +370,9 @@ void* sys_malloc(uint32_t size) {
         uint8_t desc_idx;
         // 匹配合适的内存块规格
         for (desc_idx = 0; size > descs[desc_idx].block_size; desc_idx++);         
- 
+
         // 若 mem_block_desc 中 free_list 没有可用的 mem_block，创建新 arena
-        if (list_empty(&descs[desc_idx].free_list)) {
+        if (list_empty(&descs[desc_idx].free_list)) { 
             a = get_pages(1, PF);   // 普通小内存分配，arena 为1页框
             if (!a) {
                 mutex_unlock(&mem_pool->lock);
