@@ -112,6 +112,7 @@ void process_execute(void* filename, char* name) {
     struct task_struct* thread = get_pages(1, PF_KERNEL);
     init_thread(thread, name, default_prio);
     create_page_dir(thread);
+    block_desc_init(thread->u_block_desc);
     create_user_vaddr_bitmap(thread);
     thread_create(thread, start_process, filename);
 
