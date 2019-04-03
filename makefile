@@ -32,7 +32,8 @@ OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/init.o $(OBJ_DIR)/interrupt.o \
       $(OBJ_DIR)/thread.o $(OBJ_DIR)/list.o $(OBJ_DIR)/switch.o $(OBJ_DIR)/sync.o \
       $(OBJ_DIR)/console.o $(OBJ_DIR)/keyboard.o $(OBJ_DIR)/ioqueue.o \
       $(OBJ_DIR)/tss.o $(OBJ_DIR)/process.o $(OBJ_DIR)/syscall-init.o \
-      $(OBJ_DIR)/syscall.o $(OBJ_DIR)/stdio.o $(OBJ_DIR)/math.o
+      $(OBJ_DIR)/syscall.o $(OBJ_DIR)/stdio.o $(OBJ_DIR)/math.o \
+      $(OBJ_DIR)/stdio-kernel.o $(OBJ_DIR)/ide.o 
 
 all: mk_dir build hd
 	
@@ -95,6 +96,12 @@ $(OBJ_DIR)/math.o: $(SRC_DIR)/lib/math.c
 	$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ_DIR)/stdio.o: $(SRC_DIR)/lib/stdio.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/stdio-kernel.o: $(SRC_DIR)/lib/kernel/stdio-kernel.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/ide.o: $(SRC_DIR)/device/ide.c 
 	$(CC) $(CFLAGS) $< -o $@
 
 

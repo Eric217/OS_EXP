@@ -10,9 +10,10 @@
 #include "sync.h"
 
 struct task_struct* main_thread;    // 主线程PCB
+struct task_struct* idle_thread;    // idle 线程
 
-struct list thread_ready_list;       // 就绪队列
-struct list thread_all_list;      // 所有任务队列
+struct list thread_ready_list;      // 就绪队列
+struct list thread_all_list;        // 所有任务队列
 
 struct mutex_t pid_lock;
 
@@ -41,8 +42,16 @@ static void kernel_thread(thread_func* function, void* func_arg) {
     schedule();
 }
 
-static pid_t next_pid = 0; 
+static void idle(void* arg __unused) {
+    while (1) {
+        thread_block(TASK_BLOCKED);
+        // 执行 hlt 时必须要保证目前处在开中断的情况下
+        asm volatile ("sti; hlt" : : : "memory");
+    }
+}
+
 static pid_t allocate_pid() {
+    static pid_t next_pid = 0; 
     mutex_lock(&pid_lock);
     next_pid ++;
     mutex_unlock(&pid_lock);
@@ -56,6 +65,16 @@ void thread_block(enum task_status stat) {
     running_thread()->status = stat;
     schedule();
     intr_set_status(old_status);
+}
+
+void thread_yield() {
+    struct task_struct* cur = running_thread();
+    enum intr_status old_status = intr_disable();
+    ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
+    list_append(&thread_ready_list, &cur->general_tag);
+    cur->status = TASK_READY;
+    schedule();
+    intr_set_status(old_status); 
 }
 
 void thread_unblock(struct task_struct* pthread) {
@@ -139,13 +158,17 @@ static void make_main_thread(void) {
     list_append(&thread_all_list, &main_thread->all_list_tag);
 }
 
+static void make_idle_thread(void) {
+    idle_thread = thread_start("idle", 10, idle, NULL); 
+}
+
 static struct list_elem* thread_tag; // temp container
 
 /* 实现任务调度 */
 void schedule() {
     
     ASSERT(intr_get_status() == INTR_OFF);
-    
+
     struct task_struct* cur = running_thread();
     if (cur->status == TASK_RUNNING) { // 若此线程只是cpu时间片到了,将其加入到就绪队列尾
         ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
@@ -156,8 +179,11 @@ void schedule() {
         /* 若此线程需要某事件发生后才能继续上cpu运行,
          不需要将其加入队列,因为当前线程不在就绪队列中。*/
     }
-    
-    ASSERT(!list_empty(&thread_ready_list));
+
+    if (list_empty(&thread_ready_list)) {
+        thread_unblock(idle_thread);
+    }
+
     /* 将thread_ready_list队列中的第一个就绪线程弹出,准备将其调度上cpu. */
     thread_tag = list_pop(&thread_ready_list);
     struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
@@ -175,9 +201,9 @@ void thread_init(void) {
     list_init(&thread_all_list);
     mutex_init(&pid_lock);
 
-    /* 将当前main函数创建为线程 */
-    make_main_thread();
-
+    make_main_thread(); // 将当前main函数创建为线程
+    make_idle_thread(); // 启动 idle 线程
+    
     put_str("   thread_init done!\n");
 }
 

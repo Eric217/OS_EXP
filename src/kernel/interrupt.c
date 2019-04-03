@@ -116,9 +116,10 @@ static void pic_init(void) {
     
     put_str("     pic_init done!\n");
     
-    // 目前 接受时钟、键盘 中断
-    outb (PIC_M_DATA, 0xfc);    // 对应位写1屏蔽中断
-    outb (PIC_S_DATA, 0xff);    // 从片屏蔽所有中断
+    // 对应位写1屏蔽中断
+    // 主片接受 时钟、键盘 中断，级联从片
+    outb (PIC_M_DATA, 0xf8);    // IRQ2 用于级联从片，必须打开才能响应从片中断
+    outb (PIC_S_DATA, 0xbf);    // 从片接受 硬盘 中断
 }
 
 /* 创建中断门描述符 */
