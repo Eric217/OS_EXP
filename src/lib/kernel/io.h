@@ -21,7 +21,7 @@ static inline void outb(uint16_t port, uint8_t data) {
 /******************************************************/
 }
 
-/* 将addr处起始的word_cnt个字写入端口port */
+/** 将addr处起始的word_cnt个字写入端口port */
 static inline void outsw(uint16_t port, const void* addr, uint32_t word_cnt) {
 /*********************************************************
    +表示此限制即做输入又做输出.
@@ -38,7 +38,7 @@ static inline uint8_t inb(uint16_t port) {
    return data;
 }
 
-/* 将从端口port读入的word_cnt个字写入addr */
+/** 将从端口port读入的word_cnt个字写入addr */
 static inline void insw(uint16_t port, void* addr, uint32_t word_cnt) {
 /******************************************************
    insw是将从端口port处读入的16位内容写入es:edi指向的内存,

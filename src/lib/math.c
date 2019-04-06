@@ -1,6 +1,14 @@
 #include "math.h"
 
-int pow(int x, int y) {
+inline double ceil(double x) {
+	double v = (long)x;
+	if (x == v)	{
+		return v;
+	}
+	return v + 1;
+}
+
+inline int pow(int x, int y) {
     int n = 1;
     while (y) {
         if (y & 1) 
