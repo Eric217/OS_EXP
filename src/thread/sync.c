@@ -11,10 +11,11 @@ void sema_p(struct semaphore* psem) {
 	enum intr_status old = intr_disable();
 
 	while (psem->value == 0) {
-		if (elem_find(&psem->waiters, &running_thread()->general_tag)) {
+		struct list_elem* cur = &(running_thread()->general_tag);
+		if (elem_find(&psem->waiters, cur)) {
 			PANIC("blocked thread found in waiters list \n");
 		}
-		list_append(&psem->waiters, &running_thread()->general_tag);
+		list_append(&psem->waiters, cur);
 		thread_block(TASK_BLOCKED);
 	}
 	psem->value --;
@@ -39,9 +40,10 @@ void mutex_init(struct mutex_t* pmutex) {
 }
 
 void mutex_lock(struct mutex_t* pmutex) {
-	if (pmutex->holder != running_thread())	{
+	struct task_struct* cur = running_thread();
+	if (pmutex->holder != cur)	{
 		sema_p(&pmutex->semaphore);
-		pmutex->holder = running_thread();
+		pmutex->holder = cur;
 		pmutex->holder_repeat_nr = 1;
 	} else {
 		pmutex->holder_repeat_nr ++;

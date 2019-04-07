@@ -256,8 +256,10 @@ void mfree_page(enum pool_flags pf, void* _vaddr, uint32_t pg_cnt) {
 /** 从物理内存池中申请 pg_cnt 页内存,成功则清零后返回其虚拟地址，失败返回 NULL */
 void* get_pages(uint32_t pg_cnt, enum pool_flags flag) {
     struct pool* mem_pool = flag & PF_KERNEL ? &kernel_pool : &user_pool;
+
     mutex_lock(&mem_pool->lock);
-    void* vaddr =  malloc_page(flag, pg_cnt);
+    
+    void* vaddr = malloc_page(flag, pg_cnt);
      
     if (vaddr != NULL)    // 页框清0后返回
         memset(vaddr, 0, pg_cnt * PG_SIZE);

@@ -42,7 +42,7 @@ static void kernel_thread(thread_func* function, void* func_arg) {
     schedule();
 }
 
-static void idle(void* arg __unused) {
+static void idle(__attribute__((unused)) void* arg) {
     while (1) {
         thread_block(TASK_BLOCKED);
         // 执行 hlt 时必须要保证目前处在开中断的情况下
@@ -158,7 +158,7 @@ static void make_main_thread(void) {
     list_append(&thread_all_list, &main_thread->all_list_tag);
 }
 
-static void make_idle_thread(void) {
+static void make_idle_thread() {
     idle_thread = thread_start("idle", 10, idle, NULL); 
 }
 

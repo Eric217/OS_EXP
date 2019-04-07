@@ -1,6 +1,7 @@
 #ifndef __KERNEL_GLOBAL_H
 #define __KERNEL_GLOBAL_H
 #include "stdint.h"
+#define UNUSED __attribute__((unused))
 
 #define RPL0    0
 #define RPL1    1

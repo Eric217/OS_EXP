@@ -193,7 +193,7 @@ void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {
          
         write2sector(hd, (void*)((uint32_t)buf + secs_done * 512), secs_op);
         // 硬盘开始工作
-        sema_down(&hd->my_channel->disk_done);
+        sema_p(&hd->my_channel->disk_done);
         secs_done += secs_op;
     }
     /* 醒来后开始释放锁*/
@@ -228,7 +228,7 @@ static void identify_disk(struct disk* hd) {
     char buf[64];
     uint8_t sn_start = 10 * 2, sn_len = 20, md_start = 27 * 2, md_len = 40;
     swap_pairs_bytes(id_info + sn_start, buf, sn_len);
-    printk("       disk %s info:\n       SN: %s\n", hd->name, buf);
+    printk("     DISK %s INFO:\n       SN: %s\n", hd->name, buf);
     memset(buf, 0, sizeof(buf));
     swap_pairs_bytes(id_info + md_start, buf, md_len);
     printk("       MODULE: %s\n", buf);
@@ -244,27 +244,26 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba) {
     uint8_t part_idx = 0;
     struct partition_table_entry* p = bs->partition_table;
     
-    /* 遍历分区表4个分区表项 */
+    // 遍历分区表4个分区表项
     while (part_idx++ < 4) {
-        if (p->fs_type == 0x5) {     // 若为扩展分区
-            if (ext_lba_base != 0) {
+        if (p->fs_type == 0x5) {        // 扩展分区
+            if (ext_lba_base != 0) {    // 子扩展分区
                 /* 子扩展分区的start_lba是相对于主引导扇区中的总扩展分区地址 */
                 partition_scan(hd, p->start_lba + ext_lba_base);
-            } else { // ext_lba_base为0表示是第一次读取引导块,也就是主引导记录所在的扇区
-                /* 记录下扩展分区的起始lba地址,后面所有的扩展分区地址都相对于此 */
+            } else {                    // 总扩展分区
                 ext_lba_base = p->start_lba;
                 partition_scan(hd, p->start_lba);
             }
-        } else if (p->fs_type != 0) { // 若是有效的分区类型
-            if (ext_lba == 0) {     // 此时全是主分区
+        } else if (p->fs_type != 0) {   // 有效的分区类型
+            if (ext_lba == 0) {         // 主分区
                 hd->prim_parts[p_no].start_lba = ext_lba + p->start_lba;
                 hd->prim_parts[p_no].sec_cnt = p->sec_cnt;
                 hd->prim_parts[p_no].my_disk = hd;
                 list_append(&partition_list, &hd->prim_parts[p_no].part_tag);
                 sprintf(hd->prim_parts[p_no].name, "%s%d", hd->name, p_no + 1);
                 p_no++;
-                ASSERT(p_no < 4);        // 0,1,2,3
-            } else {
+                ASSERT(p_no < 4);
+            } else {                    // 逻辑分区
                 hd->logic_parts[l_no].start_lba = ext_lba + p->start_lba;
                 hd->logic_parts[l_no].sec_cnt = p->sec_cnt;
                 hd->logic_parts[l_no].my_disk = hd;
@@ -272,7 +271,7 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba) {
                 sprintf(hd->logic_parts[l_no].name, "%s%d", hd->name, l_no + 5);     // 逻辑分区数字是从5开始,主分区是1～4.
                 l_no++;
                 if (l_no >= 8)    // 只支持8个逻辑分区,避免数组越界
-                    return;
+                    break;
             }
         }
         p++;
@@ -280,13 +279,11 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba) {
     sys_free(bs);
 }
 
-/* 打印分区信息 */
-static bool partition_info(struct list_elem* pelem, int arg UNUSED) {
+/** 打印分区信息 */
+static bool partition_info(struct list_elem* pelem, __attribute__((unused)) int arg) {
     struct partition* part = elem2entry(struct partition, part_tag, pelem);
-    printk("   %s start_lba:0x%x, sec_cnt:0x%x\n",part->name, part->start_lba, part->sec_cnt);
-    
-    /* 在此处return false与函数本身功能无关,
-     * 只是为了让主调函数list_traversal继续向下遍历元素 */
+    printk("       %s start_lba:0x%x, sec_cnt:0x%x\n",
+        part->name, part->start_lba, part->sec_cnt);
     return false;
 }
 
@@ -305,12 +302,13 @@ void intr_hd_handler(uint8_t irq_no) {
     }
 }
 
-/** 硬盘数据结构初始化 仅支持 PATA 硬盘 */
+/** 硬盘数据结构初始化 */
 void ide_init() {
     printk("   ide_init start...\n");
     uint8_t hd_cnt = *((uint8_t*)(0x475));  // 获取硬盘的数量
     ASSERT(hd_cnt > 0);
     channel_cnt = DIV_ROUND_UP(hd_cnt, 2);  // 一个ide通道上有两个硬盘,根据硬盘数量反推有几个ide通道
+    list_init(&partition_list);
     struct ide_channel* channel;
     uint8_t channel_no = 0, dev_no = 0;
     
@@ -356,8 +354,8 @@ void ide_init() {
         dev_no = 0;    // 将硬盘驱动器号置0,为下一个channel的两个硬盘初始化。
         channel_no++;
     }
-    printk("     all partition info:\n");
-    list_traversal(&partition_list, partition_info, (int)NULL);
+    printk("     ALL PARTITION INFO:\n");
+    list_traversal(&partition_list, partition_info, 0);
     printk("   ide_init done!\n");
 }
 
