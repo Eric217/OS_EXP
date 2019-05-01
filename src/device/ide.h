@@ -3,6 +3,7 @@
 #include "stdint.h"
 #include "sync.h"
 #include "bitmap.h"
+#include "super_block.h"
 
 /* 分区结构 */
 struct partition {
@@ -17,8 +18,8 @@ struct partition {
    
     struct super_block* sb;     // 本分区的超级块
     struct bitmap block_bitmap; // 块位图
-    struct bitmap inode_bitmap; // i 结点位图
-    struct list open_inodes;    // 本分区打开的i结点队列
+    struct bitmap inode_bitmap; // inode 位图
+    struct list open_inodes;    // 本分区打开的 inode 队列
 };
 
 /* 硬盘结构 */
