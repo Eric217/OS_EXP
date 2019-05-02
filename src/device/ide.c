@@ -320,12 +320,12 @@ void ide_init() {
         // 为每个ide通道初始化端口基址及中断向量
         switch (channel_no) {
             case 0:
-                channel->port_base  = 0x1f0;    // ide0通道的起始端口号是0x1f0
-                channel->irq_no     = 0x20 + 14;// 从片8259a上倒数第二的中断引脚,温盘,也就是ide0通道的的中断向量号
+                channel->port_base = 0x1f0;     // ide0通道的起始端口号是0x1f0
+                channel->irq_no    = 0x20 + 14; // 从片8259A上倒数第二的中断引脚,温盘,也就是ide0通道的的中断向量号
                 break;
             case 1:
-                channel->port_base  = 0x170;    // ide1通道的起始端口号是0x170
-                channel->irq_no     = 0x20 + 15;// 从8259A上的最后一个中断引脚,我们用来响应ide1通道上的硬盘中断
+                channel->port_base = 0x170;     // ide1通道的起始端口号是0x170
+                channel->irq_no    = 0x20 + 15; // 从8259A上的最后一个中断引脚,我们用来响应ide1通道上的硬盘中断
                 break;
         }
         
