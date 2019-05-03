@@ -8,6 +8,8 @@
 #define SECTOR_SIZE 512          	// 扇区字节大小
 #define BLOCK_SIZE SECTOR_SIZE   	// 块字节大小
 
+extern struct list partition_list; 	// 所有分区队列
+
 /* 文件类型 */
 enum file_types {
     FT_UNKNOWN,    	// 不支持的文件类型
