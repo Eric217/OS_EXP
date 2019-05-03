@@ -33,7 +33,8 @@ OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/init.o $(OBJ_DIR)/interrupt.o \
       $(OBJ_DIR)/console.o $(OBJ_DIR)/keyboard.o $(OBJ_DIR)/ioqueue.o \
       $(OBJ_DIR)/tss.o $(OBJ_DIR)/process.o $(OBJ_DIR)/syscall-init.o \
       $(OBJ_DIR)/syscall.o $(OBJ_DIR)/stdio.o $(OBJ_DIR)/math.o \
-      $(OBJ_DIR)/stdio-kernel.o $(OBJ_DIR)/ide.o $(OBJ_DIR)/fs.o
+      $(OBJ_DIR)/stdio-kernel.o $(OBJ_DIR)/ide.o $(OBJ_DIR)/fs.o $(OBJ_DIR)/dir.o \
+      $(OBJ_DIR)/file.o $(OBJ_DIR)/inode.o
 
 all: mk_dir build hd
 	
@@ -107,6 +108,15 @@ $(OBJ_DIR)/ide.o: $(SRC_DIR)/device/ide.c
 $(OBJ_DIR)/fs.o: $(SRC_DIR)/fs/fs.c 
 	$(CC) $(CFLAGS) $< -o $@
 	
+$(OBJ_DIR)/dir.o: $(SRC_DIR)/fs/dir.c 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OBJ_DIR)/file.o: $(SRC_DIR)/fs/file.c 
+	$(CC) $(CFLAGS) $< -o $@
+	
+$(OBJ_DIR)/inode.o: $(SRC_DIR)/fs/inode.c 
+	$(CC) $(CFLAGS) $< -o $@	
+
 
 ##############    汇编代码编译    ###############
 $(OBJ_DIR)/kernel.o: $(SRC_DIR)/kernel/kernel.S

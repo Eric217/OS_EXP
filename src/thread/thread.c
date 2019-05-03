@@ -116,6 +116,14 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
     pthread->ticks = prio;
     pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;
+
+    pthread->fd_table[0] = 0;
+    pthread->fd_table[1] = 1;
+    pthread->fd_table[2] = 2;
+    for (int i = 3; i < MAX_FILES_OPEN_PER_PROC; ++i) {
+        pthread->fd_table[i] = -1;
+    }
+    
     pthread->stack_magic = 0x19870916;  // 自定义的魔数
 
     pthread->status = TASK_READY;

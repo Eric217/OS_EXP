@@ -28,7 +28,7 @@ static bool mount_partition(struct list_elem* pelem, int arg) {
         if (cur_part->sb == NULL || sb_buf == NULL)  
             PANIC("alloc memory failed!"); 
         
-        // 读入超级块 */
+        // 读入超级块 
         memset(sb_buf, 0, SECTOR_SIZE);
         ide_read(hd, cur_part->start_lba + 1, sb_buf, 1); 
         // 把sb_buf中超级块的信息复制到分区的超级块sb中 
