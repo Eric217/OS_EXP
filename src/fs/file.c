@@ -51,7 +51,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx) {
 
 // LOCK BITMAP
 
-/** 从位图中分配一个 inode，返回 inode号 */
+/** 从内存的 inode位图中分配一个 inode，返回 inode号 */
 int32_t inode_bitmap_alloc(struct partition* part) {
     int32_t bit_idx = bitmap_scan(&part->inode_bitmap, 1);
     if (bit_idx == -1) {
@@ -61,7 +61,7 @@ int32_t inode_bitmap_alloc(struct partition* part) {
     return bit_idx;
 }
 
-/** 从块位图中分配1个扇区(块)，返回扇区的 LBA 地址 */
+/** 从内存的 块位图中分配1个扇区(块)，返回扇区的 LBA 地址 */
 int32_t block_bitmap_alloc(struct partition* part) {
     int32_t bit_idx = bitmap_scan(&part->block_bitmap, 1);
     if (bit_idx == -1) {
