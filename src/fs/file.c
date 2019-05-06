@@ -112,8 +112,6 @@ int32_t file_create(struct dir* parent_dir, char* filename, uint8_t flag) {
         return -1;
     }
     
-    /* 此inode要从堆中申请内存,不可生成局部变量(函数退出时会释放)
-     * 因为file_table数组中的文件描述符的inode指针要指向它.*/
     struct inode* new_file_inode = (struct inode*)sys_malloc(sizeof(struct inode));
     if (new_file_inode == NULL) {
         printk("file_create: sys_malloc for inode failded\n");

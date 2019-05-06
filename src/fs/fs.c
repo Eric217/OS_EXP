@@ -226,8 +226,6 @@ static int search_file(const char* pathname, struct path_search_record* searched
     struct dir* parent_dir = &root_dir;
     struct dir_entry dir_e;
     
-    /* 记录路径解析出来的各级名称,如路径"/a/b/c",
-     * 数组name每次的值分别是"a","b","c" */
     char name[MAX_FILE_NAME_LEN] = {0};
     
     searched_record->parent_dir = parent_dir;
@@ -235,20 +233,18 @@ static int search_file(const char* pathname, struct path_search_record* searched
     
     sub_path = path_parse(sub_path, name);
     while (name[0]) {       // 若第一个字符就是结束符,结束循环
-        /* 记录查找过的路径,但不能超过searched_path的长度512字节 */
         ASSERT(strlen(searched_record->searched_path) < 512);
         
         // 记录 存在的父目录
         strcat(searched_record->searched_path, "/");
         strcat(searched_record->searched_path, name);
         
-        /* 在所给的目录中查找文件 */
+        // 在目录中查找某文件
         if (search_dir_entry(cur_part, parent_dir, name, &dir_e)) {
             memset(name, 0, MAX_FILE_NAME_LEN);
-            /* 若sub_path不等于NULL,也就是未结束时继续拆分路径 */
-            if (sub_path) {
+            // 未结束时继续拆分路径
+            if (sub_path) 
                 sub_path = path_parse(sub_path, name);
-            }
             
             if (FT_DIRECTORY == dir_e.f_type) {   // 如果被打开的是目录
                 parent_inode_no = parent_dir->inode->i_no;
@@ -265,21 +261,20 @@ static int search_file(const char* pathname, struct path_search_record* searched
             return -1;
         }
     }
-    
     // 执行到此，必然是遍历了完整路径，且是存在的目录
     dir_close(searched_record->parent_dir);
     
-    /* 保存被查找目录的直接父目录 */
+    // 保存被查找目录的直接父目录
     searched_record->parent_dir = dir_open(cur_part, parent_inode_no);
     searched_record->file_type = FT_DIRECTORY;
     return dir_e.i_no;
 }
 
-/* 打开或创建文件成功后,返回文件描述符,否则返回-1 */
+/** 打开或创建文件成功后,返回文件描述符,否则返回-1 */
 int32_t sys_open(const char* pathname, uint8_t flags) {
-    /* 对目录要用dir_open,这里只有open文件 */
+    // 对目录用 dir_open
     if (pathname[strlen(pathname) - 1] == '/') {
-        printk("can`t open a directory %s\n",pathname);
+        printk("can`t open a directory %s\n", pathname);
         return -1;
     }
     ASSERT(flags <= 7);
@@ -288,30 +283,26 @@ int32_t sys_open(const char* pathname, uint8_t flags) {
     struct path_search_record searched_record;
     memset(&searched_record, 0, sizeof(struct path_search_record));
     
-    /* 记录目录深度.帮助判断中间某个目录不存在的情况 */
+    // 记录目录深度，帮助判断中间某个目录不存在的情况 
     uint32_t pathname_depth = path_depth_cnt((char*)pathname);
-    
-    /* 先检查文件是否存在 */
+    // 检查文件是否存在
     int inode_no = search_file(pathname, &searched_record);
     bool found = inode_no != -1 ? true : false;
     
     if (searched_record.file_type == FT_DIRECTORY) {
-        printk("can`t open a direcotry with open(), use opendir() to instead\n");
+        printk("can`t open a direcotry with open(), use opendir() instead\n");
         dir_close(searched_record.parent_dir);
         return -1;
     }
-    
     uint32_t path_searched_depth = path_depth_cnt(searched_record.searched_path);
-    
-    /* 先判断是否把pathname的各层目录都访问到了,即是否在某个中间目录就失败了 */
-    if (pathname_depth != path_searched_depth) {   // 说明并没有访问到全部的路径,某个中间目录是不存在的
+    // 先判断是否在某个中间目录就失败了
+    if (pathname_depth != path_searched_depth) {
         printk("cannot access %s: Not a directory, subpath %s is`t exist\n", \
                pathname, searched_record.searched_path);
         dir_close(searched_record.parent_dir);
         return -1;
     }
-    
-    /* 若是在最后一个路径上没找到,并且并不是要创建文件,直接返回-1 */
+    // 是在最后一个路径上没找到，并且并不是要创建文件，返回 -1
     if (!found && !(flags & O_CREAT)) {
         printk("in path %s, file %s is`t exist\n", \
                searched_record.searched_path, \
