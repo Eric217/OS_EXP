@@ -431,15 +431,26 @@ void sys_free(void* ptr) {
    
     struct mem_block* b = ptr;
     struct arena* a = block2arena(b);        
+
     ASSERT(a->large == 0 || a->large == 1);
 
     mutex_lock(&mem_pool->lock);
 
-    if (a->desc == NULL && a->large == true) { // 大于1024的内存，释放页框
-        mfree_page(PF, a, a->cnt);
+    if (a->desc == NULL) { // 大于1024的内存，释放页框 
+        if (a->large == false) { // 考虑一个错误的空内存区域，此时 desc = 0，large = 0
+            mutex_unlock(&mem_pool->lock);
+            return;
+        }
+        mfree_page(PF, a, a->cnt); 
     } else { // 小于等于1024的内存块
 
-        // 先将内存块回收到free_list 
+        // 考虑 ptr 并不是 mem_block 起始的情况，虽然 a 仍正确，需要纠正 b
+        // 属于用户程序员编程问题，按理说不该让内核程序员操心
+        uint32_t ptr_correct = (uint32_t)ptr;
+        ptr_correct -= ((uint32_t)ptr - ((uint32_t)a + sizeof(struct arena))) % a->desc->block_size;
+        b = (void*)ptr_correct;
+ 
+        // 先将内存块回收到free_list     
         list_append(&a->desc->free_list, &b->free_elem);
         
         /* 再判断此arena中的内存块是否都是空闲,如果是就释放arena */
