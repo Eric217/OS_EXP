@@ -94,7 +94,7 @@ void bitmap_sync(struct partition* part, uint32_t bit_idx, uint8_t btmp_type) {
 }
 
 /** 创建文件，若成功 返回文件描述符，否则返回 -1 */
-int32_t file_create(struct dir* parent_dir, char* filename, uint8_t flag) {
+int32_t file_create(struct dir* parent_dir, const char* filename, uint8_t flag) {
     // 后续操作的公共缓冲区
     void* io_buf = sys_malloc(1024);
     if (io_buf == NULL) {
@@ -169,8 +169,10 @@ rollback:
         case 3:
             /* 失败时,将file_table中的相应位清空 */
             memset(&file_table[fd_idx], 0, sizeof(struct file));
+            __attribute__ ((fallthrough));
         case 2:
             sys_free(new_file_inode);
+            __attribute__ ((fallthrough));
         case 1:
             /* 如果新文件的i结点创建失败,之前位图中分配的inode_no也要恢复 */
             bitmap_set(&cur_part->inode_bitmap, inode_no, 0);

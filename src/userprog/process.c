@@ -31,6 +31,7 @@ void start_process(void* filename_) {
     // 每个进程有自己的一套地址空间，same pattern，此时已切换页表
     proc_stack->cs  = SELECTOR_U_CODE;
     proc_stack->esp = (void*)((uint32_t)get_one_page(PF_USER, USER_STACK3_VADDR)+PG_SIZE);
+    // 用户进程中，假设栈不够用了，push 一个值，cpu 访问内存时，发现
     if (!proc_stack->esp) {
         ASSERT(false);
         // 1. 有成熟的页置换系统，根本不会出现这种情况；

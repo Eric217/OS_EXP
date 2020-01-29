@@ -61,7 +61,7 @@ int8_t strcmp (const char* a, const char* b) {
 }
 
 /* 从左到右查找字符串str中首次出现字符ch的地址(不是下标,是地址) */
-const char* strchr(const char* str, const uint8_t ch) {
+char* strchr(const char* str, uint8_t ch) {
     ASSERT(str != NULL);
     while (*str != 0) {
         if (*str == ch) {
@@ -73,7 +73,7 @@ const char* strchr(const char* str, const uint8_t ch) {
 }
 
 /* 从后往前查找字符串str中首次出现字符ch的地址(不是下标,是地址) */
-const char* strrchr(const char* str, const uint8_t ch) {
+char* strrchr(const char* str, uint8_t ch) {
     ASSERT(str != NULL);
     const char* last_char = NULL;
     /* 从头到尾遍历一次,若存在ch字符,last_char总是该字符最后一次出现在串中的地址(不是下标,是地址)*/

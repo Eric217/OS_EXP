@@ -2,6 +2,7 @@
 #include "super_block.h"
 #include "inode.h"
 #include "dir.h"
+#include "file.h"
 #include "stdint.h"
 #include "stdio-kernel.h"
 #include "list.h"
@@ -304,9 +305,9 @@ int32_t sys_open(const char* pathname, uint8_t flags) {
     }
     // 是在最后一个路径上没找到，并且并不是要创建文件，返回 -1
     if (!found && !(flags & O_CREAT)) {
-        printk("in path %s, file %s is`t exist\n", \
-               searched_record.searched_path, \
-               (strrchr(searched_record.searched_path, '/') + 1));
+        printk("in path %s, file %s not exist\n",
+            searched_record.searched_path,
+            strrchr(searched_record.searched_path, '/') + 1);
         dir_close(searched_record.parent_dir);
         return -1;
     } else if (found && flags & O_CREAT) {  // 若要创建的文件已存在
@@ -318,7 +319,7 @@ int32_t sys_open(const char* pathname, uint8_t flags) {
     switch (flags & O_CREAT) {
         case O_CREAT:
             printk("creating file\n");
-            fd = file_create(searched_record.parent_dir, (strrchr(pathname, '/') + 1), flags);
+            fd = file_create(searched_record.parent_dir, strrchr(pathname, '/') + 1, flags);
             dir_close(searched_record.parent_dir);
             break;
             // 其余为打开已存在文件

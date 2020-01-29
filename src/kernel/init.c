@@ -25,6 +25,6 @@ void init_all() {
     ide_init();
     filesys_init();
 
-    put_str("\nAll Initialization Complete!\n");  
+    put_str("\nAll Initialization Complete!\n\n");  
     intr_enable();
 }

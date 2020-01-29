@@ -2,6 +2,7 @@
 #define __FS_INODE_H
 #include "stdint.h"
 #include "list.h"
+#include "ide.h"
 
 /** inode 结构 */
 struct inode {

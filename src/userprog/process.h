@@ -6,6 +6,7 @@
 #define default_prio 		31
 #define USER_STACK3_VADDR   (KERNEL_SPACE - 0x1000)
 #define USER_VADDR_START 	0x8048000
+// elf 格式程序编译后段头表约定的第一个段代码段，段基址就是这个值
 
 void process_execute(void* filename, char* name);
 void start_process(void* filename_);

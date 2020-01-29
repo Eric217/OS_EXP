@@ -50,7 +50,7 @@ static void idle(__attribute__((unused)) void* arg) {
     }
 }
 
-static pid_t allocate_pid() {
+static pid_t allocate_pid(void) {
     static pid_t next_pid = 0; 
     mutex_lock(&pid_lock);
     next_pid ++;
@@ -166,7 +166,7 @@ static void make_main_thread(void) {
     list_append(&thread_all_list, &main_thread->all_list_tag);
 }
 
-static void make_idle_thread() {
+static void make_idle_thread(void) {
     idle_thread = thread_start("idle", 10, idle, NULL); 
 }
 

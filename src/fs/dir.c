@@ -2,7 +2,6 @@
 #include "stdint.h"
 #include "inode.h"
 #include "file.h"
-#include "fs.h"
 #include "stdio-kernel.h"
 #include "global.h"
 #include "debug.h"
@@ -97,7 +96,7 @@ void dir_close(struct dir* dir) {
 }
 
 /** 在内存中初始化目录项p_de */
-void create_dir_entry(char* filename, uint32_t inode_no, uint8_t file_type, struct dir_entry* p_de) {
+void create_dir_entry(const char* filename, uint32_t inode_no, uint8_t file_type, struct dir_entry* p_de) {
     ASSERT(strlen(filename) <=  MAX_FILE_NAME_LEN);
     memcpy(p_de->filename, filename, strlen(filename));
     p_de->i_no = inode_no;
