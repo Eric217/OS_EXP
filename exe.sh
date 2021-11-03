@@ -11,7 +11,7 @@ cd $(cd "$(dirname "$0")";pwd)
 if [[ $# = 1 ]]; then
 	if [[ "r" = $1 ]]; then
 		echo -e "\nall rebuilding...\n"
-		make all-r 
+		make all-r || exit 1
 	elif [[ "s" = $1 ]]; then
 		echo -e "\nskip building...\n"
 	
@@ -32,7 +32,7 @@ if [[ $# = 1 ]]; then
   
 else
 	echo -e "\nbuilding...\n"
-	make all	
+	make all || exit 1
 fi
 
 echo "start running"

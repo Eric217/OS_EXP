@@ -31,7 +31,8 @@ static struct gate_desc idt[IDT_DESC_CNT];
 // 中断程序是C写的，编译后寄存器根本控制不住，必须在执行C前备份reg，执行完C再恢复，还有中断返回、控制器操作等等，
 // 尽管这些可以在C里内联写，但每个程序都要重复这段，因此单独一个 kernel.S 做一个入口表
 
-extern intr_handler intr_entry_table[IDT_DESC_CNT]; // 指向kernel.S中的中断处理函数数组
+// 指向kernel.S中的中断处理函数数组。会越界，不过没写入，不会造成影响，下面读了也没用到
+extern intr_handler intr_entry_table[IDT_DESC_CNT]; 
 extern uint32_t syscall_handler(void);
 
 intr_handler idt_table[IDT_DESC_CNT];               // 映射上面的数组
@@ -54,7 +55,7 @@ static void general_intr_handler(uint8_t vec_num) {
     }
     
     set_cursor(0);  // 重置光标为屏幕左上角
-    put_str("!!!!!!!      excetion message begin  !!!!!!!!\n");
+    put_str("!!!!!!!      exception message begin  !!!!!!!!\n");
     set_cursor(88);  // 从第2行第8个字符开始打印
     put_str(intr_name[vec_num]);
     if (vec_num == 14) {    // 若为Pagefault,将缺失的地址打印出来并悬停
@@ -62,7 +63,7 @@ static void general_intr_handler(uint8_t vec_num) {
         asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));   // cr2是存放造成page_fault的地址
         put_str("\npage fault addr is ");put_int(page_fault_vaddr);
     }
-    put_str("\n!!!!!!!      excetion message end    !!!!!!!!\n");
+    put_str("\n!!!!!!!      exception message end    !!!!!!!!\n");
     // 能进入中断处理程序就表示已经处在关中断情况下,
     // 不会出现调度进程的情况。故下面的死循环不会再被中断。
     while(1);
@@ -133,7 +134,7 @@ static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler 
 
 /*初始化中断描述符表*/
 static void idt_desc_init(void) {
-
+    // intr_entry_table[0x80] 是越界的，但是我们只是读了
     for (int i = 0; i < IDT_DESC_CNT - 1; i++) {
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
     }

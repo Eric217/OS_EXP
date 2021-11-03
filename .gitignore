@@ -5,3 +5,4 @@ copy.txt
 *.img.lock 
 .build/
 .idea/
+.vscode/
